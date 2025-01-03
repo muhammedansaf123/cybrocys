@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "927626021690",
+    "project_id": "cybrosys-de66e",
+    "storage_bucket": "cybrosys-de66e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:927626021690:android:264e90bb550a22e5ae9e03",
+        "android_client_info": {
+          "package_name": "com.cybrosis.first_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtuw2m87sYsqvVAH2kAG0goH-LQ21rMvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
