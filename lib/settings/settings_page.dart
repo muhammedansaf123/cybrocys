@@ -345,11 +345,11 @@ class _SettingsPageState extends State<SettingsPage> {
                       ],
                     ),
                   ),
-                
-                  Theme(data: Theme.of(context)
+                  Theme(
+                    data: Theme.of(context)
                         .copyWith(splashColor: Colors.grey[100]),
-                    child: ExpansionTile( shape: Border.all(color: Colors.transparent),
-                    
+                    child: ExpansionTile(
+                      shape: Border.all(color: Colors.transparent),
                       tilePadding: EdgeInsets.all(0),
                       title: Text(
                         'terms and conditions',
@@ -359,54 +359,53 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ),
                       children: [
-                          Customtile(
-                            title: '1.Introduction',
-                            subtitle: [
-                              BulletText(
-                                  'Welcome to Dr Co , These Terms and Conditions ("Terms") govern your use of our doctor consultation application (the "App"). By using the App, you agree to these Terms. If you do not agree, please do not use the App.')
-                            ],
-                          ),
-                          Customtile(
-                              title: '2.Servives',
-                              subtitle: [
-                                BulletText(
-                                    'Our App provides a platform for connecting users with licensed medical professionals for consultations. The App does not provide medical advice, diagnosis, or treatment. All medical advice is provided directly by the consulting medical professional.')
-                              ]),
-                          Customtile(
-                              title: '3.User Responsibilities',
-                              subtitle: [
-                                BulletText('You must be at least 18 years old to use the App.'),
-                                BulletText('You agree to provide accurate and complete information when registering and using the App.'),
-                                BulletText(
-                                    'You are responsible for maintaining the confidentiality of your account credentials.'),
-                                
-                              ]),
-                          Customtile(
-                            title: '4.Fees & Payments',
-                            subtitle: [
-                              BulletText(
-                                  'Fees for consultations are displayed in the App.'),
-                                   BulletText(
-                                  'Payments are processed through secure third-party payment gateways.'),
-                                   BulletText(
-                                  'All payments are final and non-refundable, except as required by law.'),
-                            ],
-                          ),
-                           Customtile(
-                              title: '5.Governing Law',
-                              subtitle: [
-                                BulletText(
-                                    'These Terms are governed by the laws of [Jurisdiction].')
-                              ]),
-                        ],
+                        Customtile(
+                          title: '1.Introduction',
+                          subtitle: [
+                            BulletText(
+                                'Welcome to Dr Co , These Terms and Conditions ("Terms") govern your use of our doctor consultation application (the "App"). By using the App, you agree to these Terms. If you do not agree, please do not use the App.')
+                          ],
+                        ),
+                        Customtile(title: '2.Servives', subtitle: [
+                          BulletText(
+                              'Our App provides a platform for connecting users with licensed medical professionals for consultations. The App does not provide medical advice, diagnosis, or treatment. All medical advice is provided directly by the consulting medical professional.')
+                        ]),
+                        Customtile(title: '3.User Responsibilities', subtitle: [
+                          BulletText(
+                              'You must be at least 18 years old to use the App.'),
+                          BulletText(
+                              'You agree to provide accurate and complete information when registering and using the App.'),
+                          BulletText(
+                              'You are responsible for maintaining the confidentiality of your account credentials.'),
+                        ]),
+                        Customtile(
+                          title: '4.Fees & Payments',
+                          subtitle: [
+                            BulletText(
+                                'Fees for consultations are displayed in the App.'),
+                            BulletText(
+                                'Payments are processed through secure third-party payment gateways.'),
+                            BulletText(
+                                'All payments are final and non-refundable, except as required by law.'),
+                          ],
+                        ),
+                        Customtile(title: '5.Governing Law', subtitle: [
+                          BulletText(
+                              'These Terms are governed by the laws of [Jurisdiction].')
+                        ]),
+                      ],
                     ),
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.all(0),
                     onTap: () {
                       FirebaseAuth.instance.signOut();
-                      Navigator.pushReplacement(context,
-                          MaterialPageRoute(builder: (context) => LoginDemo()));
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (context) => LoginDemo(),
+                        ),
+                        (Route<dynamic> route) => false,
+                      );
                     },
                     leading: Text(
                       'Logout',

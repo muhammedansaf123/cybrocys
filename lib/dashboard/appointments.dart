@@ -5,6 +5,7 @@ import 'package:custom_rating_bar/custom_rating_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:first_app/components/components.dart';
 import 'package:first_app/profile/edit_profile.dart';
+import 'package:first_app/profile/hospital/hospital_details.dart';
 import 'package:first_app/profile/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -132,10 +133,13 @@ class _AppointmenttileState extends State<Appointmenttile> {
           'date': date,
           'doctorsname': widget.name,
           'appointmentid': appointmentid,
-          'patientname': fullname.text,
+          'patientname': namecontroller.text,
           'patientage': agecontroller.text,
           'description': descriptioncontroller.text,
-          'doctorimageurl': widget.url
+          'doctorimageurl': widget.url,
+          'type':widget.type,
+          'rating':widget.rating,
+          'gender':selectedCategory
         });
 
         print('successfully updated');
@@ -293,144 +297,174 @@ class DialogContainer extends StatefulWidget {
 }
 
 class _DialogContainerState extends State<DialogContainer> {
+@override
+  void dispose() {
+    namecontroller.clear();
+    agecontroller.clear();
+    descriptioncontroller.clear();
+    reasoncontroller.clear();
 
+    // TODO: implement dispose
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(10),
-      height: 600,
-      width: widget.screenwidth,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        color: Colors.white,
+  padding: EdgeInsets.all(20),
+  height: 650,
+  width: widget.screenwidth,
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(20),
+    color: Colors.white,
+    boxShadow: [
+      BoxShadow(
+        color: Colors.grey.withOpacity(0.3),
+        spreadRadius: 3,
+        blurRadius: 10,
+        offset: Offset(0, 3),
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    ],
+  ),
+  child: SingleChildScrollView(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
+            Text(
+              "Book Your Appointment",
+              style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20),
+            ),
+            Spacer(),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(Icons.close, color: Colors.grey),
+            ),
+          ],
+        ),
+        SizedBox(height: 20),
+        Row(
+          children: [
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: FileImage(File(widget.url)),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            SizedBox(width: 15),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Book your Appointment",
+                  widget.name,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  widget.type,
                   style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18),
+                      color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
                 ),
-                Spacer(),
-                IconButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: Icon(Icons.close))
               ],
             ),
-            SizedBox(
-              height: 15,
-            ),
-            Row(
+            Spacer(),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      width: 2,
-                      color: Colors.white,
-                    ),
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: FileImage(File(widget.url)),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                RatingBar(
+                  isHalfAllowed: true,
+                  halfFilledIcon: Icons.star_half,
+                  filledColor: Colors.amber,
+                  size: 25,
+                  filledIcon: Icons.star,
+                  emptyIcon: Icons.star_border,
+                  initialRating: widget.rating,
+                  maxRating: 5,
+                  onRatingChanged: (value) {},
                 ),
-                SizedBox(
-                  width: 10,
-                ),
-                Column(
-                  children: [
-                    Text(
-                      widget.name,
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    SizedBox(
-                      height: 4,
-                    ),
-                    Text(
-                      widget.type,
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
-                    )
-                  ],
-                ),
-                Spacer(),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    RatingBar(
-                      isHalfAllowed: true,
-                      halfFilledIcon: Icons.star_half,
-                      filledColor: Colors.amber,
-                      halfFilledColor: Colors.amber,
-                      size: 30,
-                      filledIcon: Icons.star,
-                      emptyIcon: Icons.star_border,
-                      initialRating: widget.rating,
-                      maxRating: 5,
-                      onRatingChanged: (p0) {},
-                    ),
-                    Text(
-                      widget.availablity,
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
-                    )
-                  ],
+                SizedBox(height: 5),
+                Text(
+                  widget.availablity,
+                  style: TextStyle(
+                      color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
-            SizedBox(
-              height: 40,
+          ],
+        ),
+        SizedBox(height: 30),
+        Text(
+          "Enter Details",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        SizedBox(height: 10),
+        TextField(
+          controller: namecontroller,
+          decoration: InputDecoration(
+            labelText: "Full Name",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey)
             ),
-            Edittile(
-              onTap: () {},
-              controller: reasoncontroller,
-              title: "Fill in the details below",
-              istitle: true,
-              autofocus: true,
-              hintText: "Enter your full name",
+            enabledBorder:  OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey)
             ),
-            Edittile(
-              onTap: () {},
-              controller: reasoncontroller,
-              title: "",
-              istitle: false,
-              autofocus: true,
-              hintText: "Enter your Age",
+            filled: true,
+            fillColor: Colors.grey[100],
+          ),
+        ),
+        SizedBox(height: 15),
+        TextField(
+          controller: agecontroller,
+          decoration: InputDecoration(
+            labelText: "Age",
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey)
             ),
-            Edittile(
-              onTap: () {},
-              controller: reasoncontroller,
-              title: "Purpose of visit",
-              istitle: false,
-              autofocus: true,
-              hintText: "Purpose of visit",
+            enabledBorder:  OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey)
             ),
-            SizedBox(
-              height: 10,
+            filled: true,
+            fillColor: Colors.grey[100],
+          ),
+        ),
+        SizedBox(height: 15),
+        TextField(
+          controller: reasoncontroller,
+          decoration: InputDecoration(
+            labelText: "Purpose of Visit",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey)
             ),
-            Row(
+            enabledBorder:  OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey)
+            ),
+            filled: true,
+            fillColor: Colors.grey[100],
+          ),
+        ),
+        SizedBox(height: 15),
+        Row(
               children: [
                 Expanded(
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
+                    decoration: BoxDecoration(color: Colors.grey[100],
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(width: 2)),
+                        border: Border.all(width: 1,color: Colors.grey)),
                     child: DropdownButton(
                       underline: DropdownButtonHideUnderline(child: SizedBox()),
                       isExpanded: true,
@@ -456,17 +490,15 @@ class _DialogContainerState extends State<DialogContainer> {
                 ),
               ],
             ),
-            SizedBox(
-              height: 10,
-            ),
-            Row(
+        SizedBox(height: 15),
+         Row(
               children: [
                 Expanded(
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
+                    decoration: BoxDecoration(color: Colors.grey[100],
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(width: 2)),
+                        border: Border.all(width: 1,color: Colors.grey)),
                     child: DropdownButton(
                       underline: DropdownButtonHideUnderline(child: SizedBox()),
                       isExpanded: true,
@@ -475,92 +507,89 @@ class _DialogContainerState extends State<DialogContainer> {
                           color: Colors.black, fontWeight: FontWeight.normal),
                       value: dropdownvalue,
                       icon: const Icon(Icons.keyboard_arrow_down),
-                      items: items.map((String items) {
+                      items: items.map((String values) {
                         return DropdownMenuItem(
-                          value: items,
-                          child: Text(items),
+                          value: values,
+                          child: Text(values),
                         );
                       }).toList(),
                       onChanged: (String? newValue) {
                         setState(() {
                           dropdownvalue = newValue!;
-                          print(dropdownvalue);
+                          print(selectedCategory);
                         });
                       },
                     ),
                   ),
                 ),
               ],
+            ),SizedBox(height: 15,),
+        InkWell(
+          onTap: () async {
+            final pickedDate = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2101),
+            );
+            if (pickedDate != null) {
+              setState(() => selectedDate = pickedDate);
+            }
+          },
+          child: Container(
+            height: 50,
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey),
             ),
-            Text(
-              '(note the doctor is only avialble b/w ${widget.availablity})',
-              style:
-                  TextStyle(color: Colors.black.withOpacity(0.8), fontSize: 13),
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            Row(
+            child: Row(
               children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      final DateTime? picked = await showDatePicker(
-                        locale: const Locale('en', 'GB'),
-                        context: context,
-                        fieldHintText: sDateFormate,
-                        initialDate: selectedDate,
-                        firstDate: DateTime(1970, 8),
-                        lastDate: DateTime(2101),
-                      );
-
-                      setState(() {
-                        selectedDate = picked!;
-
-                        date = DateFormat(sDateFormate).format(selectedDate);
-                        print(date);
-                      });
-                    },
-                    child: Container(
-                        height: 55,
-                        padding: EdgeInsets.symmetric(horizontal: 10),
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(width: 2)),
-                        child: Row(
-                          children: [
-                            Text(date),
-                            Spacer(),
-                            Icon(Icons.calendar_month)
-                          ],
-                        )),
-                  ),
+                Text(
+                  DateFormat('dd-MM-yyyy').format(selectedDate),
+                  style: TextStyle(color: Colors.black87),
                 ),
+                Spacer(),
+                Icon(Icons.calendar_today, color: Colors.grey),
               ],
             ),
-            SizedBox(
-              height: 10,
-            ),
-            TextFormField(
-              minLines: 2,
-              keyboardType: TextInputType.multiline,
-              maxLines: null,
-              controller: descriptioncontroller,
-              decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(),
-                  hintText: 'describe more about you condition',
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15)),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(width: 3, color: Colors.black))),
-            ),
-            Mybutton(load: false, onPressed: widget.onPressed, text: "Book now")
-          ],
+          ),
         ),
-      ),
-    );
+        SizedBox(height: 20),
+        TextField(
+          controller: descriptioncontroller,
+          minLines: 3,
+          maxLines: 5,
+          decoration: InputDecoration(
+            labelText: "Describe Your Condition",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            filled: true,
+            fillColor: Colors.grey[100],
+          ),
+        ),
+        SizedBox(height: 25),
+        ElevatedButton(
+          onPressed: widget.onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepPurple,
+            padding: EdgeInsets.symmetric(vertical: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              "Book Now",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+);
+
   }
 }
