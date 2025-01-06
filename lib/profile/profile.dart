@@ -16,24 +16,24 @@ class ProfilePage extends StatefulWidget {
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
-}   final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-    final uid = user!.uid;
+}
 
 class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
- 
-
     late Stream<DocumentSnapshot<Map<String, dynamic>>>? personnalData =
-        FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser!.uid)
+            .snapshots();
 
     return StreamBuilder<DocumentSnapshot>(
         stream: personnalData,
         builder: (context, userssnapshot) {
           if (userssnapshot.hasData) {
             final data = userssnapshot.data;
-            return Scaffold(backgroundColor:  Colors.grey[200],
+            return Scaffold(
+              backgroundColor: Colors.grey[200],
               appBar: AppBar(
                 automaticallyImplyLeading: true,
                 iconTheme: IconThemeData(color: Colors.white),
@@ -78,47 +78,44 @@ class _ProfilePageState extends State<ProfilePage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 10),
-                    child: 
-                      Customrow(
-                         onTap: (){
-                   Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => EditProfile()));
-                         },
-                          icons: Icons.person,
-                          title: 'Profile'),
-                    
+                    child: Customrow(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => EditProfile()));
+                        },
+                        icons: Icons.person,
+                        title: 'Profile'),
                   ),
                   if (data['roles'] != 'manager') ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 10),
-                      child: 
-                       Customrow(
-                         onTap: (){Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => SettingsPage()));},
-                            icons: Icons.settings,
-                            title: 'Settings'),
-                      
+                      child: Customrow(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SettingsPage()));
+                          },
+                          icons: Icons.settings,
+                          title: 'Settings'),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 10),
                       child: Customrow(
-                          onTap: (){
+                          onTap: () {
                             Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => HospitalDetails()));
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => HospitalDetails()));
                           },
-                            icons: Icons.health_and_safety,
-                            title: 'Hospital Details'),
+                          icons: Icons.health_and_safety,
+                          title: 'Hospital Details'),
                     ),
                   ],
-                 
                 ],
               ),
             );

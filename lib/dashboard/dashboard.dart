@@ -30,8 +30,9 @@ class _HomepageState extends State<Homepage> {
   bool? biometrics;
   bool? authsettings;
   late final LocalAuthentication localAuth;
-  final GlobalKey<ScaffoldState> _key = GlobalKey();
-   Map<String,dynamic>? userdata;
+  final GlobalKey<ScaffoldState> _keypatient = GlobalKey();
+  final GlobalKey<ScaffoldState> _keydoctor = GlobalKey();
+  Map<String, dynamic>? userdata;
   @override
   void initState() {
     super.initState();
@@ -49,12 +50,11 @@ class _HomepageState extends State<Homepage> {
         authsettings = data['authentication'];
         print('auth is $authsettings');
         setState(() {
-          userdata=data;
+          userdata = data;
         });
         if (authsettings == true) {
           setState(() {
             biometrics = !authsettings!;
-
           });
           print("hello");
           if (mounted) {
@@ -76,14 +76,14 @@ class _HomepageState extends State<Homepage> {
         }
 
         if (data['roles'] == 'doctor') {
-          await FirebaseFirestore.instance.collection('doctors').doc(id).update({
-            'name': data['name'],
-            'uid': id,
-            'imageurl':data['imageurl']
-          });
+          await FirebaseFirestore.instance.collection('doctors').doc(id).update(
+              {'name': data['name'], 'uid': id, 'imageurl': data['imageurl']});
         }
         if (data['roles'] == 'patient') {
-          await FirebaseFirestore.instance.collection('patient').doc(id).update({
+          await FirebaseFirestore.instance
+              .collection('patient')
+              .doc(id)
+              .update({
             'name': data['name'],
             'uid': id,
           });
@@ -117,6 +117,12 @@ class _HomepageState extends State<Homepage> {
   }
 
   @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final FirebaseAuth auth = FirebaseAuth.instance;
     final User? user = auth.currentUser;
@@ -134,7 +140,7 @@ class _HomepageState extends State<Homepage> {
             print(authsettings);
             if (data!['roles'] == 'patient' && biometrics == true) {
               return Scaffold(
-                key: _key,
+                key: _keypatient,
                 drawer: Drawer(
                   child: Container(
                     color: Colors.deepPurple.withAlpha(15),
@@ -150,19 +156,25 @@ class _HomepageState extends State<Homepage> {
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) =>
-                                          AppointmentsPage(data: userdata!,)));
+                                      builder: (context) => AppointmentsPage(
+                                            data: userdata!,
+                                          )));
 
-                              _key.currentState!.closeDrawer();
+                              _keypatient.currentState!.closeDrawer();
                             }),
-                        Customrow(
-                            icons: Icons.medical_information,
-                            title: 'Medical Records',
-                            onTap: () {  Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          MedicalRecords(data: userdata!,)));})
+                        if (userdata!['roles'] == 'patient') ...[
+                          Customrow(
+                              icons: Icons.medical_information,
+                              title: 'Medical Records',
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => MedicalRecords(
+                                              data: userdata!,
+                                            )));
+                              })
+                        ],
                       ],
                     ),
                   ),
@@ -177,7 +189,8 @@ class _HomepageState extends State<Homepage> {
                     leading: Row(
                       children: [
                         IconButton(
-                            onPressed: () => _key.currentState!.openDrawer(),
+                            onPressed: () =>
+                                _keypatient.currentState!.openDrawer(),
                             icon: Icon(Icons.menu)),
                         SizedBox(
                           width: 15,
@@ -344,7 +357,6 @@ class _HomepageState extends State<Homepage> {
                           SizedBox(
                             height: 10,
                           ),
-
                           Row(
                             children: [
                               Expanded(
@@ -710,124 +722,6 @@ class _HomepageState extends State<Homepage> {
                           SizedBox(
                             height: 15,
                           ),
-                          // Row(
-                          //   children: [
-                          //     Expanded(
-                          //       child: Container(
-                          //         padding: EdgeInsets.symmetric(
-                          //             horizontal: 10, vertical: 10),
-                          //         height: 355,
-                          //         decoration: BoxDecoration(
-                          //             color: Colors.grey[200],
-                          //             borderRadius: BorderRadius.circular(10)),
-                          //         child: Column(
-                          //           crossAxisAlignment: CrossAxisAlignment.start,
-                          //           children: [
-                          //             Text(
-                          //               'Available Doctors',
-                          //               style: TextStyle(
-                          //                   color: Colors.black,
-                          //                   fontWeight: FontWeight.bold),
-                          //             ),
-                          //             SizedBox(
-                          //               height: 15,
-                          //             ),
-                          //             Container(
-                          //               height: 300,
-                          //               child: ListView.builder(
-                          //                 itemCount: docotDetails.length,
-                          //                 itemBuilder:
-                          //                     (BuildContext context, int index) {
-                          //                   return Padding(
-                          //                     padding: const EdgeInsets.only(bottom: 5),
-                          //                     child: Container(
-                          //                       height: 60,
-                          //                       decoration: BoxDecoration(
-                          //                           borderRadius:
-                          //                               BorderRadius.circular(5),
-                          //                           color: Colors.deepPurple),
-                          //                       child: Row(
-                          //                         children: [
-                          //                           SizedBox(
-                          //                             width: 10,
-                          //                           ),
-                          //                           Container(
-                          //                             height: 40,
-                          //                             width: 40,
-                          //                             child: Image.asset(
-                          //                               docotDetails[index].image,
-                          //                               fit: BoxFit.cover,
-                          //                             ),
-                          //                           ),
-                          //                           Spacer(),
-                          //                           Column(
-                          //                             mainAxisAlignment:
-                          //                                 MainAxisAlignment.center,
-                          //                             children: [
-                          //                               Text(
-                          //                                 docotDetails[index].name,
-                          //                                 style: TextStyle(
-                          //                                     color: Colors.white,
-                          //                                     fontWeight:
-                          //                                         FontWeight.bold),
-                          //                               ),
-                          //                               Text(
-                          //                                 docotDetails[index].expertise,
-                          //                                 style: TextStyle(
-                          //                                     color: Colors.white),
-                          //                               ),
-                          //                             ],
-                          //                           ),
-                          //                           Spacer(),
-                          //                           Column(
-                          //                             mainAxisAlignment:
-                          //                                 MainAxisAlignment.center,
-                          //                             crossAxisAlignment:
-                          //                                 CrossAxisAlignment.center,
-                          //                             children: [
-                          //                               Text(
-                          //                                 'Rating',
-                          //                                 style: TextStyle(
-                          //                                     color: Colors.white),
-                          //                               ),
-                          //                               Row(
-                          //                                 mainAxisAlignment:
-                          //                                     MainAxisAlignment.end,
-                          //                                 children: [
-                          //                                   Icon(
-                          //                                     Icons.star,
-                          //                                     color: Colors.amber,
-                          //                                   ),
-                          //                                   SizedBox(
-                          //                                     width: 3,
-                          //                                   ),
-                          //                                   Text(
-                          //                                     docotDetails[index]
-                          //                                         .rating
-                          //                                         .toString(),
-                          //                                     style: TextStyle(
-                          //                                         color: Colors.white),
-                          //                                   )
-                          //                                 ],
-                          //                               ),
-                          //                             ],
-                          //                           ),
-                          //                           SizedBox(
-                          //                             width: 20,
-                          //                           ),
-                          //                         ],
-                          //                       ),
-                          //                     ),
-                          //                   );
-                          //                 },
-                          //               ),
-                          //             ),
-                          //           ],
-                          //         ),
-                          //       ),
-                          //     ),
-                          //   ],
-                          // ),
                           SizedBox(
                             height: 15,
                           ),
@@ -856,41 +750,73 @@ class _HomepageState extends State<Homepage> {
               );
             } else if (data['roles'] == 'doctor') {
               return Scaffold(
-                appBar: AppBar(
-                    centerTitle: true,
-                    leading: Padding(
-                      padding: const EdgeInsets.only(left: 15),
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ProfilePage(),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            color: Color.fromARGB(255, 158, 77, 130),
-                            shape: BoxShape.circle,
-                          ),
-                          child: CircleAvatar(
-                            backgroundImage: FileImage(File(data!['imageurl'])),
-                          ),
+                key: _keydoctor,
+                drawer: Drawer(
+                  child: Container(
+                    color: Colors.deepPurple.withAlpha(15),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 60,
                         ),
-                      ),
+                        Customrow(
+                            icons: Icons.calendar_month_sharp,
+                            title: 'Appontments',
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => MedicalRecords(
+                                            data: userdata!,
+                                          )));
+
+                              _keydoctor.currentState!.closeDrawer();
+                            }),
+                      ],
                     ),
+                  ),
+                ),
+                appBar: AppBar(
                     actions: [
                       IconButton(
-                          onPressed: () {
-                            FirebaseAuth.instance.signOut();
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => LoginDemo()));
-                          },
+                          onPressed: () {},
                           icon: Icon(Icons.notifications_active))
                     ],
+                    leadingWidth: 120,
+                    leading: Row(
+                      children: [
+                        IconButton(
+                            onPressed: () =>
+                                _keydoctor.currentState!.openDrawer(),
+                            icon: Icon(Icons.menu)),
+                        SizedBox(
+                          width: 15,
+                        ),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProfilePage(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Color.fromARGB(255, 158, 77, 130),
+                              shape: BoxShape.circle,
+                            ),
+                            child: CircleAvatar(
+                              backgroundImage: FileImage(File(
+                                data!['imageurl'],
+                              )),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    titleSpacing: 0,
+                    centerTitle: true,
                     title: Text('Dashboard')),
                 body: Container(
                     color: Colors.white,

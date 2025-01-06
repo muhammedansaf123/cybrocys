@@ -3,13 +3,10 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:custom_rating_bar/custom_rating_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/components/components.dart';
 import 'package:first_app/profile/edit_profile.dart';
-import 'package:first_app/profile/hospital/hospital_details.dart';
-import 'package:first_app/profile/profile.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import 'package:uuid/uuid.dart';
 
 class AppointmentsPage extends StatelessWidget {
@@ -103,9 +100,8 @@ String date = DateFormat("dd/MM/yyyy").format(DateTime.now());
 var gender = [
   'Male',
   'Female',
-  
 ];
-  String selectedCategory = 'Male';
+String selectedCategory = 'Male';
 var items = [
   '8.00 AM - 9.00 AM',
   '9.00 AM - 10.00 AM',
@@ -130,16 +126,16 @@ class _AppointmenttileState extends State<Appointmenttile> {
           'patientid': FirebaseAuth.instance.currentUser!.uid,
           'approved': false,
           'timeslot': dropdownvalue,
-          'date': date,
+          'date': selectedDate,
           'doctorsname': widget.name,
           'appointmentid': appointmentid,
           'patientname': namecontroller.text,
           'patientage': agecontroller.text,
           'description': descriptioncontroller.text,
           'doctorimageurl': widget.url,
-          'type':widget.type,
-          'rating':widget.rating,
-          'gender':selectedCategory
+          'type': widget.type,
+          'rating': widget.rating,
+          'gender': selectedCategory
         });
 
         print('successfully updated');
@@ -172,7 +168,7 @@ class _AppointmenttileState extends State<Appointmenttile> {
                 appointmentRequest();
               },
               screenwidth: screenwidth,
-              uid: uid,
+              uid: userid,
               rating: widget.rating,
               url: widget.url,
               name: widget.name,
@@ -195,6 +191,7 @@ class _AppointmenttileState extends State<Appointmenttile> {
         elevation: 15,
         child: ListTile(
           onTap: () {
+            print(selectedDate);
             showdialog(screenwidth);
           },
           contentPadding:
@@ -297,7 +294,7 @@ class DialogContainer extends StatefulWidget {
 }
 
 class _DialogContainerState extends State<DialogContainer> {
-@override
+  @override
   void dispose() {
     namecontroller.clear();
     agecontroller.clear();
@@ -307,164 +304,165 @@ class _DialogContainerState extends State<DialogContainer> {
     // TODO: implement dispose
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-  padding: EdgeInsets.all(20),
-  height: 650,
-  width: widget.screenwidth,
-  decoration: BoxDecoration(
-    borderRadius: BorderRadius.circular(20),
-    color: Colors.white,
-    boxShadow: [
-      BoxShadow(
-        color: Colors.grey.withOpacity(0.3),
-        spreadRadius: 3,
-        blurRadius: 10,
-        offset: Offset(0, 3),
+      padding: EdgeInsets.all(20),
+      height: 650,
+      width: widget.screenwidth,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 3,
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
-    ],
-  ),
-  child: SingleChildScrollView(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Book Your Appointment",
-              style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20),
-            ),
-            Spacer(),
-            IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: Icon(Icons.close, color: Colors.grey),
-            ),
-          ],
-        ),
-        SizedBox(height: 20),
-        Row(
-          children: [
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: FileImage(File(widget.url)),
-                  fit: BoxFit.cover,
+            Row(
+              children: [
+                Text(
+                  "Book Your Appointment",
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20),
                 ),
+                Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close, color: Colors.grey),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            Row(
+              children: [
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: FileImage(File(widget.url)),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 15),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.name,
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      widget.type,
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RatingBar(
+                      isHalfAllowed: true,
+                      halfFilledIcon: Icons.star_half,
+                      filledColor: Colors.amber,
+                      size: 25,
+                      filledIcon: Icons.star,
+                      emptyIcon: Icons.star_border,
+                      initialRating: widget.rating,
+                      maxRating: 5,
+                      onRatingChanged: (value) {},
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      widget.availablity,
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 30),
+            Text(
+              "Enter Details",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: namecontroller,
+              decoration: InputDecoration(
+                labelText: "Full Name",
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey)),
+                filled: true,
+                fillColor: Colors.grey[100],
               ),
             ),
-            SizedBox(width: 15),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.name,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  widget.type,
-                  style: TextStyle(
-                      color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-              ],
+            SizedBox(height: 15),
+            TextField(
+              controller: agecontroller,
+              decoration: InputDecoration(
+                labelText: "Age",
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey)),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
             ),
-            Spacer(),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RatingBar(
-                  isHalfAllowed: true,
-                  halfFilledIcon: Icons.star_half,
-                  filledColor: Colors.amber,
-                  size: 25,
-                  filledIcon: Icons.star,
-                  emptyIcon: Icons.star_border,
-                  initialRating: widget.rating,
-                  maxRating: 5,
-                  onRatingChanged: (value) {},
-                ),
-                SizedBox(height: 5),
-                Text(
-                  widget.availablity,
-                  style: TextStyle(
-                      color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-              ],
+            SizedBox(height: 15),
+            TextField(
+              controller: reasoncontroller,
+              decoration: InputDecoration(
+                labelText: "Purpose of Visit",
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey)),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
             ),
-          ],
-        ),
-        SizedBox(height: 30),
-        Text(
-          "Enter Details",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        SizedBox(height: 10),
-        TextField(
-          controller: namecontroller,
-          decoration: InputDecoration(
-            labelText: "Full Name",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey)
-            ),
-            enabledBorder:  OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey)
-            ),
-            filled: true,
-            fillColor: Colors.grey[100],
-          ),
-        ),
-        SizedBox(height: 15),
-        TextField(
-          controller: agecontroller,
-          decoration: InputDecoration(
-            labelText: "Age",
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey)
-            ),
-            enabledBorder:  OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey)
-            ),
-            filled: true,
-            fillColor: Colors.grey[100],
-          ),
-        ),
-        SizedBox(height: 15),
-        TextField(
-          controller: reasoncontroller,
-          decoration: InputDecoration(
-            labelText: "Purpose of Visit",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey)
-            ),
-            enabledBorder:  OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey)
-            ),
-            filled: true,
-            fillColor: Colors.grey[100],
-          ),
-        ),
-        SizedBox(height: 15),
-        Row(
+            SizedBox(height: 15),
+            Row(
               children: [
                 Expanded(
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(color: Colors.grey[100],
+                    decoration: BoxDecoration(
+                        color: Colors.grey[100],
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(width: 1,color: Colors.grey)),
+                        border: Border.all(width: 1, color: Colors.grey)),
                     child: DropdownButton(
                       underline: DropdownButtonHideUnderline(child: SizedBox()),
                       isExpanded: true,
@@ -490,15 +488,16 @@ class _DialogContainerState extends State<DialogContainer> {
                 ),
               ],
             ),
-        SizedBox(height: 15),
-         Row(
+            SizedBox(height: 15),
+            Row(
               children: [
                 Expanded(
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(color: Colors.grey[100],
+                    decoration: BoxDecoration(
+                        color: Colors.grey[100],
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(width: 1,color: Colors.grey)),
+                        border: Border.all(width: 1, color: Colors.grey)),
                     child: DropdownButton(
                       underline: DropdownButtonHideUnderline(child: SizedBox()),
                       isExpanded: true,
@@ -523,73 +522,79 @@ class _DialogContainerState extends State<DialogContainer> {
                   ),
                 ),
               ],
-            ),SizedBox(height: 15,),
-        InkWell(
-          onTap: () async {
-            final pickedDate = await showDatePicker(
-              context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2101),
-            );
-            if (pickedDate != null) {
-              setState(() => selectedDate = pickedDate);
-            }
-          },
-          child: Container(
-            height: 50,
-            padding: EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey),
             ),
-            child: Row(
-              children: [
-                Text(
-                  DateFormat('dd-MM-yyyy').format(selectedDate),
-                  style: TextStyle(color: Colors.black87),
+            SizedBox(
+              height: 15,
+            ),
+            InkWell(
+              onTap: () async {
+                final pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2101),
+                );
+                if (pickedDate != null) {
+                  setState(() => selectedDate = pickedDate);
+                }
+              },
+              child: Container(
+                height: 50,
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey),
                 ),
-                Spacer(),
-                Icon(Icons.calendar_today, color: Colors.grey),
-              ],
+                child: Row(
+                  children: [
+                    Text(
+                      DateFormat('dd-MM-yyyy').format(selectedDate),
+                      style: TextStyle(color: Colors.black87),
+                    ),
+                    Spacer(),
+                    Icon(Icons.calendar_today, color: Colors.grey),
+                  ],
+                ),
+              ),
             ),
-          ),
+            SizedBox(height: 20),
+            TextField(
+              controller: descriptioncontroller,
+              minLines: 3,
+              maxLines: 5,
+              decoration: InputDecoration(
+                labelText: "Describe Your Condition",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+            ),
+            SizedBox(height: 25),
+            ElevatedButton(
+              onPressed: widget.onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                padding: EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  "Book Now",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+              ),
+            ),
+          ],
         ),
-        SizedBox(height: 20),
-        TextField(
-          controller: descriptioncontroller,
-          minLines: 3,
-          maxLines: 5,
-          decoration: InputDecoration(
-            labelText: "Describe Your Condition",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            filled: true,
-            fillColor: Colors.grey[100],
-          ),
-        ),
-        SizedBox(height: 25),
-        ElevatedButton(
-          onPressed: widget.onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepPurple,
-            padding: EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: Center(
-            child: Text(
-              "Book Now",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
-            ),
-          ),
-        ),
-      ],
-    ),
-  ),
-);
-
+      ),
+    );
   }
 }
