@@ -2,19 +2,16 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:first_app/appointments/surgery_admit.dart';
 import 'package:first_app/components/components.dart';
-
 import 'package:first_app/components/const.dart';
-import 'package:first_app/dashboard/appointments.dart';
-import 'package:first_app/dashboard/medical_records.dart';
-import 'package:first_app/login/login_page.dart';
-import 'package:first_app/profile/edit_profile.dart';
+import 'package:first_app/appointments/appointmentshow.dart';
+import 'package:first_app/appointments/medicalrecords.dart';
+import 'package:first_app/dashboard/drawer_widget.dart';
 import 'package:first_app/profile/hospital/hospital_details.dart';
 import 'package:first_app/profile/profile.dart';
-
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
-
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class Homepage extends StatefulWidget {
@@ -30,8 +27,8 @@ class _HomepageState extends State<Homepage> {
   bool? biometrics;
   bool? authsettings;
   late final LocalAuthentication localAuth;
-  final GlobalKey<ScaffoldState> _keypatient = GlobalKey();
-  final GlobalKey<ScaffoldState> _keydoctor = GlobalKey();
+  final GlobalKey<ScaffoldState> _key = GlobalKey();
+
   Map<String, dynamic>? userdata;
   @override
   void initState() {
@@ -140,45 +137,14 @@ class _HomepageState extends State<Homepage> {
             print(authsettings);
             if (data!['roles'] == 'patient' && biometrics == true) {
               return Scaffold(
-                key: _keypatient,
-                drawer: Drawer(
-                  child: Container(
-                    color: Colors.deepPurple.withAlpha(15),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 60,
-                        ),
-                        Customrow(
-                            icons: Icons.calendar_month_sharp,
-                            title: 'Appontments',
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => AppointmentsPage(
-                                            data: userdata!,
-                                          )));
-
-                              _keypatient.currentState!.closeDrawer();
-                            }),
-                        if (userdata!['roles'] == 'patient') ...[
-                          Customrow(
-                              icons: Icons.medical_information,
-                              title: 'Medical Records',
-                              onTap: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => MedicalRecords(
-                                              data: userdata!,
-                                            )));
-                              })
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
+                key: _key,
+                drawer: Drawerwidget(onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              Appointmentshowpage(data: userdata!)));
+                }),
                 appBar: AppBar(
                     actions: [
                       IconButton(
@@ -189,8 +155,7 @@ class _HomepageState extends State<Homepage> {
                     leading: Row(
                       children: [
                         IconButton(
-                            onPressed: () =>
-                                _keypatient.currentState!.openDrawer(),
+                            onPressed: () => _key.currentState!.openDrawer(),
                             icon: Icon(Icons.menu)),
                         SizedBox(
                           width: 15,
@@ -749,33 +714,17 @@ class _HomepageState extends State<Homepage> {
                 ),
               );
             } else if (data['roles'] == 'doctor') {
+              const IconData medical_information =
+                  IconData(0xf07ac, fontFamily: 'MaterialIcons');
               return Scaffold(
-                key: _keydoctor,
-                drawer: Drawer(
-                  child: Container(
-                    color: Colors.deepPurple.withAlpha(15),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 60,
-                        ),
-                        Customrow(
-                            icons: Icons.calendar_month_sharp,
-                            title: 'Appontments',
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => MedicalRecords(
-                                            data: userdata!,
-                                          )));
-
-                              _keydoctor.currentState!.closeDrawer();
-                            }),
-                      ],
-                    ),
-                  ),
-                ),
+                key: _key,
+                drawer: Drawerwidget(onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              Appointmentshowpage(data: userdata!)));
+                }),
                 appBar: AppBar(
                     actions: [
                       IconButton(
@@ -786,8 +735,7 @@ class _HomepageState extends State<Homepage> {
                     leading: Row(
                       children: [
                         IconButton(
-                            onPressed: () =>
-                                _keydoctor.currentState!.openDrawer(),
+                            onPressed: () => _key.currentState!.openDrawer(),
                             icon: Icon(Icons.menu)),
                         SizedBox(
                           width: 15,

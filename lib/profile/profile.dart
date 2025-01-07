@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:first_app/components/components.dart';
-import 'package:first_app/login/login_page.dart';
 import 'package:first_app/profile/edit_profile.dart';
 import 'package:first_app/profile/hospital/hospital_details.dart';
 import 'package:first_app/settings/settings_page.dart';
