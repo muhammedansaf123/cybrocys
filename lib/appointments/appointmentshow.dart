@@ -7,7 +7,10 @@ import 'package:first_app/appointments/appointmentsbooking.dart';
 import 'package:first_app/userdata.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:printing/printing.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class Appointmentshowpage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -71,7 +74,6 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
 
   void fetchuserdata() async {
     final user = await Userdata(uid: uid).getData();
-
     print(user['name']);
   }
 
@@ -80,9 +82,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
       query = FirebaseFirestore.instance
           .collection('appointments')
           .where('patientid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-          .orderBy('doctorsname')
-          .startAt([searchController.text]).endAt(
-              [searchController.text + '\uf8ff']);
+          .where('searchkeywords', arrayContains: searchController.text);
     });
   }
 
@@ -370,8 +370,12 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
               child: TextField(
                 controller: searchController,
                 onChanged: (value) {
-                  print(searchController.text);
-                  searchQuery();
+                  if (value.length == 0) {
+                    clearQuery();
+                  } else {
+                    print(searchController.text);
+                    searchQuery();
+                  }
                 },
                 decoration: InputDecoration(
                   suffixIcon: Icon(Icons.search),
@@ -423,7 +427,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
           Container(
             height: widget.data['roles'] == 'patient'
                 ? 525
-                : MediaQuery.of(context).size.height*0.87,
+                : MediaQuery.of(context).size.height * 0.87,
             child: StreamBuilder(
               stream: query!.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -490,38 +494,6 @@ class Appointmentshowtile extends StatefulWidget {
 }
 
 class _MedicalRecordTileState extends State<Appointmentshowtile> {
-  void showdialogform(double screenwidth, DateTime date) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-            insetPadding: EdgeInsets.all(15),
-            child: DialogAppointmentcontainer(
-              reason: widget.appointmentdata['reason'],
-              appointmentid: widget.appointmentdata['appointmentid'],
-              note: widget.appointmentdata['note'],
-              status: widget.appointmentdata['status'],
-              userdata: widget.userdata,
-              date: date,
-              age: widget.appointmentdata['patientage'],
-              gender: widget.appointmentdata['gender'],
-              description: widget.appointmentdata['description'],
-              rating: widget.appointmentdata['rating'],
-              url: widget.appointmentdata['doctorimageurl'],
-              name: widget.userdata['roles'] == 'patient'
-                  ? widget.appointmentdata['doctorsname']
-                  : widget.appointmentdata['patientname'],
-              type: widget.appointmentdata['type'],
-              approved: widget.appointmentdata['approved'],
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              screenwidth: screenwidth,
-            ));
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final date = widget.appointmentdata['date'].toDate();
@@ -534,7 +506,31 @@ class _MedicalRecordTileState extends State<Appointmentshowtile> {
         elevation: 15,
         child: InkWell(
           onTap: () {
-            showdialogform(MediaQuery.of(context).size.width, date);
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => DialogAppointmentcontainer(
+                          reason: widget.appointmentdata['reason'],
+                          appointmentid:
+                              widget.appointmentdata['appointmentid'],
+                          note: widget.appointmentdata['note'],
+                          status: widget.appointmentdata['status'],
+                          userdata: widget.userdata,
+                          date: date,
+                          age: widget.appointmentdata['patientage'],
+                          gender: widget.appointmentdata['gender'],
+                          description: widget.appointmentdata['description'],
+                          rating: widget.appointmentdata['rating'],
+                          url: widget.appointmentdata['doctorimageurl'],
+                          name: widget.userdata['roles'] == 'patient'
+                              ? widget.appointmentdata['doctorsname']
+                              : widget.appointmentdata['patientname'],
+                          type: widget.appointmentdata['type'],
+                          approved: widget.appointmentdata['approved'],
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        )));
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -572,7 +568,7 @@ class _MedicalRecordTileState extends State<Appointmentshowtile> {
                           children: [
                             Icon(Icons.calendar_month),
                             Text(
-                              DateFormat("dd/MM/yyyy").format(date),
+                              DateFormat("dd-MM-yyyy").format(date),
                               style: const TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
@@ -602,15 +598,19 @@ class _MedicalRecordTileState extends State<Appointmentshowtile> {
                 Spacer(),
                 (widget.appointmentdata['approved'] ||
                         widget.appointmentdata['status'] != "null")
-                    ? Text(
-                        widget.appointmentdata['status'],
-                        style: TextStyle(
-                            color:
-                                widget.appointmentdata['status'] == "Approved"
+                    ? Column(
+                        children: [
+                          Text(
+                            widget.appointmentdata['status'],
+                            style: TextStyle(
+                                color: widget.appointmentdata['status'] ==
+                                        "Approved"
                                     ? Colors.green
                                     : Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 19),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 19),
+                          ),
+                        ],
                       )
                     : widget.userdata['roles'] == 'patient'
                         ? ElevatedButton(
@@ -697,7 +697,6 @@ class _MedicalRecordTileState extends State<Appointmentshowtile> {
 }
 
 class DialogAppointmentcontainer extends StatefulWidget {
-  final double screenwidth;
   final Map userdata;
   final double rating;
   final String url;
@@ -724,7 +723,6 @@ class DialogAppointmentcontainer extends StatefulWidget {
     required this.date,
     required this.gender,
     required this.description,
-    required this.screenwidth,
     required this.rating,
     required this.url,
     required this.name,
@@ -740,217 +738,382 @@ class DialogAppointmentcontainer extends StatefulWidget {
 class _DialogContainerState extends State<DialogAppointmentcontainer> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      height: 650,
-      width: widget.screenwidth,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 3,
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+    return Scaffold(
+      floatingActionButton: widget.status != "null"
+          ? FloatingActionButton(
+              child: Icon(
+                Icons.download,
+              ),
+              onPressed: () {
+                final pdf = pw.Document();
+
+                pdf.addPage(pw.Page(
+                    pageFormat: PdfPageFormat.a4,
+                    build: (pw.Context context) {
+                      return pw.Center(
+                        child: pw.Text("Hello World"),
+                      ); // Center
+                    }));
+                // Page
+                generatePdf(
+                    reason: widget.reason,
+                    appointmentid: widget.appointmentid,
+                    note: widget.note,
+                    status: widget.status,
+                    userdata: widget.userdata,
+                    date: widget.date,
+                    age: widget.age,
+                    gender: widget.gender,
+                    description: widget.description,
+                    rating: widget.rating,
+                    url: widget.url,
+                    name: widget.userdata['roles'] == 'patient'
+                        ? widget.name
+                        : widget.userdata['name'],
+                    type: widget.type,
+                    approved: widget.approved);
+              })
+          : SizedBox(),
+      appBar: AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: Colors.deepPurple,
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Text(
-                  "Appointment Details",
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: Colors.grey),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            if (widget.userdata['roles'] == 'patient')
-              Row(
-                children: [
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: FileImage(File(widget.url)),
-                        fit: BoxFit.cover,
+      body: Container(
+        padding: const EdgeInsets.all(20),
+        height: MediaQuery.of(context).size.height,
+        width: MediaQuery.of(context).size.width,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              if (widget.userdata['roles'] == 'patient')
+                Row(
+                  children: [
+                    Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: FileImage(File(widget.url)),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 15),
-                  Column(
+                    const SizedBox(width: 15),
+                    Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.type,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          (widget.status != "null")
+                              ? Text(
+                                  widget.status,
+                                  style: TextStyle(
+                                      color: widget.status == "Approved"
+                                          ? Colors.green
+                                          : Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17),
+                                )
+                              : Text(
+                                  "Not Approved",
+                                  style: TextStyle(color: Colors.red),
+                                )
+                        ]),
+                    const Spacer(),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.name,
+                          "${widget.rating} ★",
                           style: const TextStyle(
+                            color: Colors.amber,
                             fontSize: 18,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.type,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                        (widget.status != "null")
-                            ? Text(
-                                widget.status,
-                                style: TextStyle(
-                                    color: widget.status == "Approved"
-                                        ? Colors.green
-                                        : Colors.red,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 17),
-                              )
-                            : Text(
-                                "Not Approved",
-                                style: TextStyle(color: Colors.red),
-                              )
-                      ]),
-                  const Spacer(),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "${widget.rating} ★",
-                        style: const TextStyle(
-                          color: Colors.amber,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                    ],
-                  ),
-                ],
+                        const SizedBox(height: 5),
+                      ],
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 30),
+              const Text(
+                "Details",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
               ),
-            const SizedBox(height: 30),
-            const Text(
-              "Details",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 15),
-            DetailRow(label: "Full Name", value: widget.name),
-            const SizedBox(height: 10),
-            DetailRow(label: "Age", value: widget.age),
-            const SizedBox(height: 10),
-            DetailRow(label: "Gender", value: "Male"),
-            const SizedBox(height: 10),
-            DetailRow(label: "Purpose of Visit", value: widget.reason),
-            const SizedBox(height: 10),
-            DetailRow(
-                label: "Date",
-                value: DateFormat('dd-MM-yyyy').format(widget.date)),
-            const SizedBox(height: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Describe Condition:",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                Text(
-                  widget.description,
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                if (widget.userdata['roles'] == 'doctor' &&
-                    widget.status == 'Approved' &&
-                    widget.note == "") ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                          onPressed: () {
-                            FirebaseFirestore.instance
-                                .collection('appointments')
-                                .doc(widget.appointmentid)
-                                .update({
-                              'note': "requsted for a Surgery",
-                              'prescribed': 'surgery'
-                            });
-                            Navigator.pop(context);
-                          },
-                          child: Text("Surgery")),
-                      SizedBox(
-                        width: 5,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            FirebaseFirestore.instance
-                                .collection('appointments')
-                                .doc(widget.appointmentid)
-                                .update({
-                              'note': "requsted for a Admit",
-                              'prescribed': 'admit'
-                            });
-                            Navigator.pop(context);
-                          },
-                          child: Text("Admit"))
-                    ],
-                  )
-                ],
-                if (widget.status == 'Approved' && widget.note != "") ...[
+              const SizedBox(height: 15),
+              DetailRow(label: "Full Name", value: widget.name),
+              const SizedBox(height: 10),
+              DetailRow(label: "Age", value: widget.age),
+              const SizedBox(height: 10),
+              DetailRow(label: "Gender", value: "Male"),
+              const SizedBox(height: 10),
+              DetailRow(label: "Purpose of Visit", value: widget.reason),
+              const SizedBox(height: 10),
+              DetailRow(
+                  label: "Date",
+                  value: DateFormat('dd-MM-yyyy').format(widget.date)),
+              const SizedBox(height: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    "Prescribed:",
+                    "Describe Condition:",
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
                   ),
-                  SizedBox(
-                    width: 5,
+                  Text(
+                    widget.description,
+                    style: const TextStyle(
+                      fontSize: 16,
+                    ),
                   ),
-                  if (widget.userdata['roles'] == 'doctor')
+                  SizedBox(
+                    height: 10,
+                  ),
+                  if (widget.userdata['roles'] == 'doctor' &&
+                      widget.status == 'Approved' &&
+                      widget.note == "") ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                            onPressed: () {
+                              FirebaseFirestore.instance
+                                  .collection('appointments')
+                                  .doc(widget.appointmentid)
+                                  .update({
+                                'note': "requsted for a Surgery",
+                                'prescribed': 'surgery'
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text("Surgery")),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              FirebaseFirestore.instance
+                                  .collection('appointments')
+                                  .doc(widget.appointmentid)
+                                  .update({
+                                'note': "requsted for a Admit",
+                                'prescribed': 'admit'
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text("Admit"))
+                      ],
+                    )
+                  ],
+                  if (widget.status == 'Approved' && widget.note != "") ...[
                     Text(
-                      'you have ${widget.note}',
+                      "Prescribed:",
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
                       ),
                     ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  if (widget.userdata['roles'] == 'patient' &&
-                      widget.status == 'Approved' &&
-                      widget.note != '') ...[
-                    Text("${widget.name} has requested for a surgery")
-                  ]
+                    SizedBox(
+                      width: 5,
+                    ),
+                    if (widget.userdata['roles'] == 'doctor')
+                      Text(
+                        'you have ${widget.note}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                    SizedBox(
+                      height: 5,
+                    ),
+                    if (widget.userdata['roles'] == 'patient' &&
+                        widget.status == 'Approved' &&
+                        widget.note != '') ...[
+                      Text("${widget.name} has requested for a surgery")
+                    ]
+                  ],
                 ],
-              ],
-            ),
-            const SizedBox(height: 25),
-          ],
+              ),
+              const SizedBox(height: 25),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+Future<void> generatePdf({
+  required Map userdata,
+  required double rating,
+  required String url,
+  required String age,
+  required String name,
+  required String type,
+  required String description,
+  required String gender,
+  required DateTime date,
+  required String appointmentid,
+  required bool approved,
+  required String status,
+  required String note,
+  required String reason,
+  BuildContext? context,
+}) async {
+  final pdf = pw.Document();
+
+  final image = pw.MemoryImage(
+    File(url).readAsBytesSync(),
+  );
+
+  pdf.addPage(
+    pw.Page(
+      build: (pw.Context context) => pw.Container(
+        padding: const pw.EdgeInsets.all(20),
+        decoration: pw.BoxDecoration(
+          borderRadius: pw.BorderRadius.circular(20),
+          boxShadow: [
+            pw.BoxShadow(
+              spreadRadius: 3,
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Row(
+              children: [
+                pw.Text(
+                  "Appointment Details",
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+                pw.Spacer(),
+              ],
+            ),
+            pw.SizedBox(height: 20),
+            if (userdata['roles'] == 'patient')
+              pw.Row(
+                children: [
+                  pw.Container(
+                    width: 70,
+                    height: 70,
+                    decoration: pw.BoxDecoration(
+                      shape: pw.BoxShape.circle,
+                      image: pw.DecorationImage(
+                          image: image, fit: pw.BoxFit.cover),
+                    ),
+                  ),
+                  pw.SizedBox(width: 15),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        name,
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        type,
+                        style: pw.TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      pw.SizedBox(height: 5),
+                      pw.Text(
+                        status != "null" ? status : "Not Approved",
+                        style: pw.TextStyle(
+                          color: status == "Approved"
+                              ? PdfColor(0, 1, 0)
+                              : PdfColor(1, 0, 0),
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 17,
+                        ),
+                      ),
+                    ],
+                  ),
+                  pw.Spacer(),
+                  pw.Text(
+                    "$rating ★",
+                    style: pw.TextStyle(
+                      color: PdfColor(1, 1, 0),
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+            pw.SizedBox(height: 30),
+            pw.Text(
+              "Details",
+              style: pw.TextStyle(
+                fontSize: 20,
+              ),
+            ),
+            pw.SizedBox(height: 15),
+            detailRow("Full Name", name),
+            detailRow("Age", age),
+            detailRow("Gender", gender),
+            detailRow("Purpose of Visit", reason),
+            detailRow("Date", "${date.day}-${date.month}-${date.year}"),
+            pw.SizedBox(height: 10),
+            pw.Text(
+              "Describe Condition:",
+              style: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            pw.Text(
+              description,
+              style: pw.TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  await Printing.sharePdf(bytes: await pdf.save(), filename: 'my-document.pdf');
+}
+
+pw.Widget detailRow(String label, String value) {
+  return pw.Row(
+    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+    children: [
+      pw.Text(
+        label,
+        style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+      ),
+      pw.Text(
+        value,
+        style: pw.TextStyle(fontSize: 16),
+      ),
+    ],
+  );
 }

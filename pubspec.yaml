@@ -40,7 +40,9 @@ dependencies:
   image_picker: ^1.0.7
   intl: ^0.19.0
   local_auth: ^2.3.0
+  pdf: ^3.11.1
   percent_indicator: ^4.2.4
+  printing: ^5.13.4
   shared_preferences: null
   syncfusion_flutter_calendar: ^28.1.36
   syncfusion_flutter_charts: ^28.1.36

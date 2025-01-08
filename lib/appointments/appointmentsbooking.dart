@@ -95,8 +95,9 @@ TextEditingController agecontroller = TextEditingController();
 TextEditingController descriptioncontroller = TextEditingController();
 String dropdownvalue = '8.00 AM - 9.00 AM';
 final sDateFormate = "dd/MM/yyyy";
-DateTime selectedDate = DateTime.now();
-String date = DateFormat("dd/MM/yyyy").format(DateTime.now());
+DateTime? selectedDate;
+String? date;
+String? appointmentDate;
 var gender = [
   'Male',
   'Female',
@@ -114,9 +115,27 @@ var items = [
 
 class _AppointmenttileState extends State<Appointmenttile> {
   void appointmentRequest() {
+    DateTime today = DateTime.now();
+   
     final appointmentid = Uuid().v4();
-    if (reasoncontroller.text.isNotEmpty) {
+    if (selectedDate!.isAfter(today) || selectedDate!.day == today.day) {
       try {
+        String doctorName = widget.name.toLowerCase();
+        List<String> nameSubstrings = [];
+        for (int i = 1; i <= doctorName.length; i++) {
+          for (int j = 0; j <= doctorName.length - i; j++) {
+            nameSubstrings.add(doctorName.substring(j, j + i));
+          }
+        }
+
+        List<String> dateCombinations = [];
+
+        for (int i = 1; i <= appointmentDate!.length; i++) {
+          for (int j = 0; j <= appointmentDate!.length - i; j++) {
+            dateCombinations.add(appointmentDate!.substring(j, j + i));
+          }
+        }
+        List<String> searchKeywords = [...nameSubstrings, ...dateCombinations];
         FirebaseFirestore.instance
             .collection('appointments')
             .doc(appointmentid)
@@ -137,9 +156,10 @@ class _AppointmenttileState extends State<Appointmenttile> {
           'rating': widget.rating,
           'gender': selectedCategory,
           'status': "null",
-          'code':'a',
-          'note':"",
-          'prescribed':'null'
+          'code': 'a',
+          'note': "",
+          'prescribed': 'null',
+          'searchkeywords': searchKeywords
         });
         if (mounted) {
           setState(() {
@@ -148,8 +168,6 @@ class _AppointmenttileState extends State<Appointmenttile> {
             selectedDate = DateTime.now();
           });
         }
-
-        print('successfully updated');
         Navigator.pop(context);
         reasoncontroller.clear();
 
@@ -158,8 +176,14 @@ class _AppointmenttileState extends State<Appointmenttile> {
       } catch (e) {
         print(e);
       }
-    } else {
-      print('reason is empty');
+    } else if (reasoncontroller.text.isEmpty ||
+        namecontroller.text.isEmpty ||
+        agecontroller.text.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('please fill all the fields')));
+    } else if (!selectedDate!.isAfter(today)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Date must be selected of future')));
     }
   }
 
@@ -310,6 +334,23 @@ class _DialogContainerState extends State<DialogContainer> {
   }
 
   @override
+  void initState() {
+    if (mounted) {
+      setState(() {
+        selectedDate = DateTime.now();
+        print(DateTime.now());
+       
+        date = DateFormat("dd/MM/yyyy").format(DateTime.now());
+         print(date);
+        appointmentDate = DateFormat("dd-MM-yyyy").format(DateTime.now());
+        print(appointmentDate);
+      });
+    }
+    // TODO: implement initState
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
@@ -342,10 +383,6 @@ class _DialogContainerState extends State<DialogContainer> {
                         fontSize: 20),
                   ),
                   Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close, color: Colors.grey),
-                  ),
                 ],
               ),
               SizedBox(height: 20),
@@ -385,7 +422,7 @@ class _DialogContainerState extends State<DialogContainer> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      RatingBar(
+                      RatingBar.readOnly(
                         isHalfAllowed: true,
                         halfFilledIcon: Icons.star_half,
                         filledColor: Colors.amber,
@@ -394,7 +431,6 @@ class _DialogContainerState extends State<DialogContainer> {
                         emptyIcon: Icons.star_border,
                         initialRating: widget.rating,
                         maxRating: 5,
-                        onRatingChanged: (value) {},
                       ),
                       SizedBox(height: 5),
                       Text(
@@ -500,13 +536,18 @@ class _DialogContainerState extends State<DialogContainer> {
               InkWell(
                 onTap: () async {
                   final pickedDate = await showDatePicker(
+                    barrierDismissible: true,
                     context: context,
                     initialDate: DateTime.now(),
-                    firstDate: DateTime(2000),
+                    firstDate: DateTime.now(),
                     lastDate: DateTime(2101),
                   );
                   if (pickedDate != null) {
-                    setState(() => selectedDate = pickedDate);
+                    setState(() {
+                      selectedDate = pickedDate;
+                      appointmentDate =
+                          DateFormat('dd-MM-yyyy').format(selectedDate!);
+                    });
                   }
                 },
                 child: Container(
@@ -520,7 +561,7 @@ class _DialogContainerState extends State<DialogContainer> {
                   child: Row(
                     children: [
                       Text(
-                        DateFormat('dd-MM-yyyy').format(selectedDate),
+                        DateFormat('dd-MM-yyyy').format(selectedDate!),
                         style: TextStyle(color: Colors.black87),
                       ),
                       Spacer(),

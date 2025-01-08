@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/appointments/appointmentshow.dart';
-import 'package:first_app/profile/edit_profile.dart';
 import 'package:first_app/userdata.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
