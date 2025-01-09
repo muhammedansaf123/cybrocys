@@ -116,7 +116,7 @@ var items = [
 class _AppointmenttileState extends State<Appointmenttile> {
   void appointmentRequest() {
     DateTime today = DateTime.now();
-   
+    String reasons = reasoncontroller.text;
     final appointmentid = Uuid().v4();
     if (selectedDate!.isAfter(today) || selectedDate!.day == today.day) {
       try {
@@ -135,7 +135,19 @@ class _AppointmenttileState extends State<Appointmenttile> {
             dateCombinations.add(appointmentDate!.substring(j, j + i));
           }
         }
-        List<String> searchKeywords = [...nameSubstrings, ...dateCombinations];
+
+        List<String> reasoncombination = [];
+
+        for (int i = 1; i <= reasons.length; i++) {
+          for (int j = 0; j <= reasons.length - i; j++) {
+            reasoncombination.add(reasons.substring(j, j + i));
+          }
+        }
+        List<String> searchKeywords = [
+          ...nameSubstrings,
+          ...dateCombinations,
+          ...reasoncombination
+        ];
         FirebaseFirestore.instance
             .collection('appointments')
             .doc(appointmentid)
@@ -339,9 +351,9 @@ class _DialogContainerState extends State<DialogContainer> {
       setState(() {
         selectedDate = DateTime.now();
         print(DateTime.now());
-       
+
         date = DateFormat("dd/MM/yyyy").format(DateTime.now());
-         print(date);
+        print(date);
         appointmentDate = DateFormat("dd-MM-yyyy").format(DateTime.now());
         print(appointmentDate);
       });

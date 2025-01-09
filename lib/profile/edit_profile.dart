@@ -22,7 +22,7 @@ String? roles = '';
 String? name;
 String position = '';
 
-Map? userdata;
+Map? _userdata;
 bool isedit = false;
 
 String userid = '';
