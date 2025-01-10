@@ -96,7 +96,7 @@ class Doctorcharts extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<ChartData> chartData = [
       ChartData('Surgeries', 25, Colors.deepPurple),
-      ChartData('Consultation', 38, Colors.blue),
+      ChartData('Consultation', 38, Colors.deepPurple),
       ChartData('pending', 34, Colors.orangeAccent),
       ChartData('Done', 52, Colors.green)
     ];
@@ -260,7 +260,7 @@ class ActivityGraph extends StatelessWidget {
           dataSource: patientData,
           splineType: SplineType.cardinal,
           cardinalSplineTension: 0.9,
-          color: Colors.blue,
+          color: Colors.deepPurple,
           xValueMapper: (ActivityData data, _) => data.x,
           yValueMapper: (ActivityData data, _) => data.y,
         ),
@@ -483,7 +483,6 @@ class Mybutton extends StatelessWidget {
   }
 }
 
-
 class DetailRow extends StatelessWidget {
   final String label;
   final String value;
@@ -496,25 +495,40 @@ class DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "$label: ",
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.label,
+            color: Colors.deepPurple,
+            size: 24.0,
           ),
-        ),
-        Expanded(
-          child: Text(
-            value,
+          const SizedBox(width: 8.0),
+          Text(
+            "$label: ",
             style: const TextStyle(
-              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Colors.deepPurple,
             ),
           ),
-        ),
-      ],
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

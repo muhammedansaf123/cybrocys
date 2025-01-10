@@ -1,4 +1,5 @@
 import 'package:first_app/appointments/medicalrecords.dart';
+import 'package:first_app/appointments/surgery_admit.dart';
 import 'package:first_app/components/components.dart';
 import 'package:flutter/material.dart';
 
@@ -51,7 +52,7 @@ class Drawerwidget extends StatelessWidget {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => Medicalrecords()));
+                          builder: (context) => SurgeryAdmit()));
                 }),
             Customrow(
                 icons: Icons.apartment,

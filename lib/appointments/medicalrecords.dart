@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:first_app/profile/edit_profile.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class Medicalrecords extends StatefulWidget {
   const Medicalrecords({super.key});
@@ -13,13 +16,13 @@ class _MedicalrecordsState extends State<Medicalrecords> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredRecords = [];
   List<Map<String, dynamic>> _allRecords = [];
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
+  String currentfilter = 'None';
+  DateTime? selectedDate = DateTime.now();
+  bool isFilter = false;
+  DateTime? filterdate = DateTime.now();
+  String status = '';
   void _filterRecords() {
+    isFilter = true;
     final searchText = _searchController.text.toLowerCase();
     setState(() {
       _filteredRecords = _allRecords.where((record) {
@@ -29,6 +32,51 @@ class _MedicalrecordsState extends State<Medicalrecords> {
         });
       }).toList();
     });
+  }
+
+  void clearfilter() {
+    setState(() {
+      _filteredRecords = _allRecords;
+    });
+  }
+
+  void consultationfilter(String date) {
+    setState(() {
+      isFilter = true;
+      _filteredRecords = _allRecords.where((record) {
+        return record.values.any((value) {
+          final stringValue = value.toString().toLowerCase();
+          return stringValue.contains(date);
+        });
+      }).toList();
+      print(_filteredRecords);
+    });
+  }
+
+  void statusFilter(String status) {
+    print(status);
+    setState(() {
+      isFilter = true;
+      _filteredRecords = _allRecords.where((record) {
+        return record.values.any((value) {
+          final stringValue = value.toString().toLowerCase();
+          return stringValue.contains(status);
+        });
+      }).toList();
+      print(_filteredRecords);
+    });
+  }
+
+  void consultationquery() {}
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
   }
 
   @override
@@ -45,9 +93,225 @@ class _MedicalrecordsState extends State<Medicalrecords> {
         backgroundColor: Colors.deepPurple,
         actions: [
           IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: _downloadMedicalHistory,
-          ),
+              onPressed: () {
+                showModalBottomSheet<void>(
+                  isScrollControlled: true,
+                  context: context,
+                  builder: (BuildContext context) {
+                    return StatefulBuilder(
+                        builder: (BuildContext context, StateSetter setState) {
+                      return Wrap(
+                        children: [
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    "Filter By",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 5),
+                                  Text(
+                                    "Select a filtering method",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.only(left: 15),
+                                        decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.black, width: 2),
+                                            borderRadius:
+                                                BorderRadius.circular(10)),
+                                        child: DropdownButton<String>(
+                                          underline:
+                                              DropdownButtonHideUnderline(
+                                                  child: SizedBox()),
+                                          value: currentfilter,
+                                          items: <String>[
+                                            'None',
+                                            'consultation dates',
+                                            'status',
+                                            'Doctors name'
+                                          ].map((String value) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(value),
+                                            );
+                                          }).toList(),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              currentfilter = value!;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      Spacer(),
+                                      ElevatedButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              clearfilter();
+                                            });
+                                            print(_filteredRecords);
+                                          },
+                                          child: Text("Clear Filter"))
+                                    ],
+                                  ),
+                                  if (currentfilter == 'None') ...[
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Container(
+                                      height: 250,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Colors.grey[200],
+                                      ),
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Center(
+                                        child:
+                                            Text('No Filter Category Selected'),
+                                      ),
+                                    ),
+                                  ],
+                                  if (currentfilter ==
+                                      'consultation dates') ...[
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Colors.grey[200],
+                                      ),
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Center(
+                                        child: TableCalendar(
+                                            selectedDayPredicate: (day) {
+                                              if (day == selectedDate) {
+                                                return true;
+                                              } else {
+                                                return false;
+                                              }
+                                            },
+                                            onDaySelected: (start, selected) {
+                                              selectedDate = selected;
+                                              setState(() {
+                                                selectedDate = selected;
+                                              });
+                                              final appointmentDate =
+                                                  DateFormat('dd-MM-yyyy')
+                                                      .format(selectedDate!);
+                                              consultationfilter(
+                                                  appointmentDate);
+
+                                              //print('selected:$selected');
+                                            },
+                                            calendarFormat:
+                                                CalendarFormat.month,
+                                            onFormatChanged: (format) {},
+                                            focusedDay: selectedDate!,
+                                            firstDay: DateTime(2000),
+                                            lastDay: DateTime(2100)),
+                                      ),
+                                    ),
+                                  ],
+                                  if (currentfilter == 'status') ...[
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Container(
+                                      height: 250,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Colors.grey[200],
+                                      ),
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Center(
+                                          child: Column(
+                                        children: [
+                                          Card(
+                                            child: ListTile(
+                                              onTap: () {
+                                                statusFilter('recovered');
+                                              },
+                                              title: Text("Recovered"),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          Card(
+                                            child: ListTile(
+                                              onTap: () {
+                                                statusFilter('under treatment');
+                                              },
+                                              title: Text('Under Treatment'),
+                                            ),
+                                          )
+                                        ],
+                                      )),
+                                    ),
+                                  ],
+                                  if (currentfilter == 'Doctors name') ...[
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Container(
+                                      height: 250,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Colors.grey[200],
+                                      ),
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Center(
+                                          child: Column(
+                                        children: [
+                                          Card(
+                                            child: ListTile(
+                                              onTap: () {
+                                                statusFilter('dr. jane doe');
+                                              },
+                                              title: Text("DR. Jane Doe"),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          Card(
+                                            child: ListTile(
+                                              onTap: () {
+                                                statusFilter('dr. john');
+                                              },
+                                              title: Text('DR. John'),
+                                            ),
+                                          )
+                                        ],
+                                      )),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    });
+                  },
+                );
+              },
+              icon: Icon(Icons.tune))
         ],
       ),
       body: Column(
@@ -81,7 +345,6 @@ class _MedicalrecordsState extends State<Medicalrecords> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  print('Error fetching data: ${snapshot.error}');
                   return const Center(child: Text('Error fetching data'));
                 }
 
@@ -92,11 +355,13 @@ class _MedicalrecordsState extends State<Medicalrecords> {
                       .toList();
                 }
 
-                if (_filteredRecords.isEmpty &&
-                    _searchController.text.isEmpty) {
+                if (_filteredRecords.isEmpty && isFilter == false) {
+                  print('second');
+
                   _filteredRecords = _allRecords;
                 }
-                if (_filteredRecords.isEmpty) {
+                if (_filteredRecords.isEmpty && filterdate != null) {
+                  print('third');
                   _filteredRecords = _allRecords;
                   return const Center(child: Text('No records found'));
                 }
@@ -109,6 +374,8 @@ class _MedicalrecordsState extends State<Medicalrecords> {
                     final name = record['name'];
                     final lastConsultationDate =
                         record['consultation']['lastConsultationDate'];
+                    final nextConsultationDate =
+                        record['consultation']['nextConsultationDate'];
                     final history = record['history'].join(", ");
 
                     return Padding(
@@ -124,7 +391,7 @@ class _MedicalrecordsState extends State<Medicalrecords> {
                                 fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
-                            'Consultation: $lastConsultationDate\nReason: ${history}',
+                            'last Consultation: $lastConsultationDate\nnext Consultation: $nextConsultationDate\nReason: $history',
                             style: TextStyle(color: Colors.white),
                           ),
                           onTap: () {
@@ -168,16 +435,15 @@ class _MedicalrecordsState extends State<Medicalrecords> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          print("hello world");
-        },
-        child: const Icon(Icons.add),
+        onPressed: () {},
         backgroundColor: Colors.deepPurple,
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
       ),
     );
   }
-
-  void _downloadMedicalHistory() {}
 }
 
 class DetailScreen extends StatelessWidget {
@@ -198,7 +464,7 @@ class DetailScreen extends StatelessWidget {
   final String notes;
 
   const DetailScreen({
-    Key? key,
+    super.key,
     required this.id,
     required this.name,
     required this.lastConsultationDate,
@@ -214,7 +480,95 @@ class DetailScreen extends StatelessWidget {
     required this.allergies,
     required this.contactInfo,
     required this.notes,
-  }) : super(key: key);
+  });
+
+  Future<void> generatePdf() async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Header(
+              level: 0,
+              child: pw.Text('Patient Details',
+                  style: pw.TextStyle(
+                      fontSize: 22, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.SizedBox(height: 10),
+            pw.Text('ID: $id',
+                style:
+                    pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+            pw.Text('Name: $name', style: pw.TextStyle(fontSize: 14)),
+            pw.Text('Age: $age', style: pw.TextStyle(fontSize: 14)),
+            pw.Text('Status: $status', style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 10),
+            pw.Text('Last Consultation: $lastConsultationDate',
+                style: pw.TextStyle(fontSize: 14)),
+            pw.Text('Next Consultation: $nextConsultationDate',
+                style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 10),
+            pw.Text('Doctor: $doctorsName', style: pw.TextStyle(fontSize: 14)),
+            pw.Text('Specialization: $specialization',
+                style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 20),
+            pw.Text('History:',
+                style:
+                    pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+            pw.Text(history, style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 10),
+            pw.Text('Allergies:',
+                style:
+                    pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+            pw.Text(allergies, style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 10),
+            pw.Text('Contact Info:',
+                style:
+                    pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+            pw.Text(contactInfo, style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 10),
+            pw.Text('Notes:',
+                style:
+                    pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+            pw.Text(notes, style: pw.TextStyle(fontSize: 14)),
+            pw.SizedBox(height: 20),
+            pw.Header(
+              level: 1,
+              child: pw.Text('Prescriptions',
+                  style: pw.TextStyle(
+                      fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Bullet(
+              text:
+                  'Medicine: ${presc1['medicine']}\nFrequency: ${presc1['frequency']}\nDosage: ${presc1['dosage']}',
+            ),
+            pw.Bullet(
+              text:
+                  'Medicine: ${presc2['medicine']}\nFrequency: ${presc2['frequency']}\nDosage: ${presc2['dosage']}',
+            ),
+            pw.SizedBox(height: 20),
+            pw.Header(
+              level: 1,
+              child: pw.Text('Lab Results',
+                  style: pw.TextStyle(
+                      fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            ),
+            for (var result in labResults)
+              pw.Container(
+                padding: pw.EdgeInsets.only(bottom: 8),
+                child: pw.Text(
+                  '${result['test']} - ${result['result']} on ${result['date']}',
+                  style: pw.TextStyle(fontSize: 14),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+    await Printing.sharePdf(
+        bytes: await pdf.save(), filename: 'my-document.pdf');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -293,17 +647,6 @@ class DetailScreen extends StatelessWidget {
                             'Prescriptions',
                             style: TextStyle(fontSize: 16),
                           ),
-
-                          //             ListTile(
-                          //   leading:
-                          //   title: Column(
-                          //     children: [
-
-                          //       Text('Dosage:${presc1['dosage']}')
-                          //     ],
-                          //   ),
-                          //   subtitle: Text(', $presc2'),
-                          // ),
                         ],
                       ),
                       SizedBox(
@@ -361,7 +704,8 @@ class DetailScreen extends StatelessWidget {
                       ),
                       Row(
                         children: [
-                          Icon(Icons.content_paste_go_outlined, color: Colors.deepPurple),
+                          Icon(Icons.content_paste_go_outlined,
+                              color: Colors.deepPurple),
                           SizedBox(
                             width: 10,
                           ),
@@ -369,17 +713,6 @@ class DetailScreen extends StatelessWidget {
                             'Lab Results',
                             style: TextStyle(fontSize: 16),
                           ),
-
-                          //             ListTile(
-                          //   leading:
-                          //   title: Column(
-                          //     children: [
-
-                          //       Text('Dosage:${presc1['dosage']}')
-                          //     ],
-                          //   ),
-                          //   subtitle: Text(', $presc2'),
-                          // ),
                         ],
                       ),
                       SizedBox(
@@ -464,6 +797,12 @@ class DetailScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          generatePdf();
+        },
+        child: Icon(Icons.download),
       ),
     );
   }

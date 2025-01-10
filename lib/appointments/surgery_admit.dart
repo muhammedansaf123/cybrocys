@@ -11,7 +11,7 @@ class SurgeryAdmit extends StatelessWidget {
   Widget build(BuildContext context) {
     final userdata =
         Userdata(uid: FirebaseAuth.instance.currentUser!.uid).getData();
-    print('rdrrdrrr$userdata');
+    print('$userdata');
     return DefaultTabController(
       length: 2,
       child: Scaffold(

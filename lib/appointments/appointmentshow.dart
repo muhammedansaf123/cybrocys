@@ -160,24 +160,36 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
                                   SizedBox(height: 5),
                                   Row(
                                     children: [
-                                      DropdownButton<String>(
-                                        value: currentfilter,
-                                        items: <String>[
-                                          'None',
-                                          'Doctors name',
-                                          'Date range',
-                                        ].map((String value) {
-                                          return DropdownMenuItem<String>(
-                                            value: value,
-                                            child: Text(value),
-                                          );
-                                        }).toList(),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            currentfilter = value!;
-                                            print(currentfilter);
-                                          });
-                                        },
+                                      Container(
+                                        padding: EdgeInsets.only(left: 15),
+                                        width: 150,
+                                        decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.black, width: 2),
+                                            borderRadius:
+                                                BorderRadius.circular(10)),
+                                        child: DropdownButton<String>(
+                                          underline:
+                                              DropdownButtonHideUnderline(
+                                                  child: SizedBox()),
+                                          value: currentfilter,
+                                          items: <String>[
+                                            'None',
+                                            'Doctors name',
+                                            'Date range',
+                                          ].map((String value) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(value),
+                                            );
+                                          }).toList(),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              currentfilter = value!;
+                                              print(currentfilter);
+                                            });
+                                          },
+                                        ),
                                       ),
                                       Spacer(),
                                       ElevatedButton(
@@ -188,6 +200,9 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
                                     ],
                                   ),
                                   if (currentfilter == 'None') ...[
+                                    SizedBox(
+                                      height: 10,
+                                    ),
                                     Container(
                                       height: 250,
                                       decoration: BoxDecoration(
@@ -447,7 +462,6 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
                 return SizedBox(
                   child: ListView.builder(
                       itemCount: snapshot.data!.docs.length,
-                      
                       itemBuilder: (context, index) {
                         final appointmentdata = snapshot.data!.docs[index];
                         final appointmentid = appointmentdata['appointmentid'];
@@ -876,17 +890,41 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Describe Condition:",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8.0, horizontal: 12.0),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
-                  ),
-                  Text(
-                    widget.description,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.label,
+                              color: Colors.deepPurple,
+                              size: 24.0,
+                            ),
+                            const SizedBox(width: 8.0),
+                            Text(
+                              "Describe Condition:",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Colors.deepPurple,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          widget.description,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   SizedBox(
@@ -894,66 +932,96 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
                   ),
                   if (widget.userdata['roles'] == 'doctor' &&
                       widget.status == 'Approved' &&
-                      widget.note == "") ...[
+                      widget.note == "") ...[SizedBox(height: 20,),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        ElevatedButton(
-                            onPressed: () {
-                              FirebaseFirestore.instance
-                                  .collection('appointments')
-                                  .doc(widget.appointmentid)
-                                  .update({
-                                'note': "requsted for a Surgery",
-                                'prescribed': 'surgery'
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text("Surgery")),
+                        Expanded(
+                          child: Mybutton(
+                              load: false,
+                              onPressed: () {
+                                FirebaseFirestore.instance
+                                    .collection('appointments')
+                                    .doc(widget.appointmentid)
+                                    .update({
+                                  'note': "requsted for a Surgery",
+                                  'prescribed': 'surgery'
+                                });
+                                Navigator.pop(context);
+                              },
+                              text: "Surgery"),
+                        ),
                         SizedBox(
                           width: 5,
                         ),
-                        ElevatedButton(
-                            onPressed: () {
-                              FirebaseFirestore.instance
-                                  .collection('appointments')
-                                  .doc(widget.appointmentid)
-                                  .update({
-                                'note': "requsted for a Admit",
-                                'prescribed': 'admit'
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text("Admit"))
+                        Expanded(
+                          child: Mybutton(
+                              load: false,
+                              onPressed: () {
+                                FirebaseFirestore.instance
+                                    .collection('appointments')
+                                    .doc(widget.appointmentid)
+                                    .update({
+                                  'note': "requsted for a Admit",
+                                  'prescribed': 'admit'
+                                });
+                                Navigator.pop(context);
+                              },
+                              text: "Admit"),
+                        )
                       ],
                     )
                   ],
                   if (widget.status == 'Approved' && widget.note != "") ...[
-                    Text(
-                      "Prescribed:",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 12.0),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.label,
+                                color: Colors.deepPurple,
+                                size: 24.0,
+                              ),
+                              Text(
+                                "Prescribed:",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: Colors.deepPurple,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (widget.userdata['roles'] == 'doctor')
+                            Text(
+                              'you have ${widget.note}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          if (widget.userdata['roles'] == 'patient' &&
+                              widget.status == 'Approved' &&
+                              widget.note != '') ...[
+                            Text(
+                              "${widget.name} has requested for a surgery",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black87,
+                              ),
+                            )
+                          ]
+                        ],
                       ),
                     ),
-                    SizedBox(
-                      width: 5,
-                    ),
-                    if (widget.userdata['roles'] == 'doctor')
-                      Text(
-                        'you have ${widget.note}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                        ),
-                      ),
-                    SizedBox(
-                      height: 5,
-                    ),
-                    if (widget.userdata['roles'] == 'patient' &&
-                        widget.status == 'Approved' &&
-                        widget.note != '') ...[
-                      Text("${widget.name} has requested for a surgery")
-                    ]
                   ],
                 ],
               ),
