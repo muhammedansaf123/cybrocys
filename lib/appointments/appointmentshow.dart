@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:first_app/surgeries_admit/surgery_admit.dart';
+import 'package:first_app/surgeries_admit/surgery_admit_forms.dart';
 import 'package:first_app/components/components.dart';
 import 'package:first_app/appointments/appointmentsbooking.dart';
-import 'package:first_app/userdata.dart';
+import 'package:first_app/user/userdata.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
@@ -13,7 +15,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class Appointmentshowpage extends StatefulWidget {
-  final Map<String, dynamic> data;
+  final Map<dynamic, dynamic> data;
   const Appointmentshowpage({super.key, required this.data});
 
   @override
@@ -525,6 +527,7 @@ class _MedicalRecordTileState extends State<Appointmentshowtile> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => DialogAppointmentcontainer(
+                          patientid: widget.appointmentdata['patientid'],
                           reason: widget.appointmentdata['reason'],
                           appointmentid:
                               widget.appointmentdata['appointmentid'],
@@ -713,6 +716,7 @@ class _MedicalRecordTileState extends State<Appointmentshowtile> {
 
 class DialogAppointmentcontainer extends StatefulWidget {
   final Map userdata;
+  final String patientid;
   final double rating;
   final String url;
   final String age;
@@ -729,6 +733,7 @@ class DialogAppointmentcontainer extends StatefulWidget {
   final String reason;
   const DialogAppointmentcontainer({
     super.key,
+    required this.patientid,
     required this.status,
     required this.age,
     required this.appointmentid,
@@ -751,6 +756,12 @@ class DialogAppointmentcontainer extends StatefulWidget {
 }
 
 class _DialogContainerState extends State<DialogAppointmentcontainer> {
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -932,7 +943,10 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
                   ),
                   if (widget.userdata['roles'] == 'doctor' &&
                       widget.status == 'Approved' &&
-                      widget.note == "") ...[SizedBox(height: 20,),
+                      widget.note == "") ...[
+                    SizedBox(
+                      height: 20,
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -940,14 +954,17 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
                           child: Mybutton(
                               load: false,
                               onPressed: () {
-                                FirebaseFirestore.instance
-                                    .collection('appointments')
-                                    .doc(widget.appointmentid)
-                                    .update({
-                                  'note': "requsted for a Surgery",
-                                  'prescribed': 'surgery'
-                                });
-                                Navigator.pop(context);
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => SurgeryAdmitForms(
+                                              patientid: widget.patientid,
+                                              reason: widget.reason,
+                                              userdata: widget.userdata,
+                                              issurgery: true,
+                                              appointmentid:
+                                                  widget.appointmentid,
+                                            )));
                               },
                               text: "Surgery"),
                         ),
@@ -958,14 +975,17 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
                           child: Mybutton(
                               load: false,
                               onPressed: () {
-                                FirebaseFirestore.instance
-                                    .collection('appointments')
-                                    .doc(widget.appointmentid)
-                                    .update({
-                                  'note': "requsted for a Admit",
-                                  'prescribed': 'admit'
-                                });
-                                Navigator.pop(context);
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => SurgeryAdmitForms(
+                                              patientid: widget.patientid,
+                                              reason: widget.reason,
+                                              userdata: widget.userdata,
+                                              issurgery: false,
+                                              appointmentid:
+                                                  widget.appointmentid,
+                                            )));
                               },
                               text: "Admit"),
                         )

@@ -10,7 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 class AppointmentsPage extends StatelessWidget {
-  final Map<String, dynamic> data;
+  final Map<dynamic, dynamic> data;
   const AppointmentsPage({super.key, required this.data});
 
   @override
@@ -632,7 +632,7 @@ class AppointmentTextfield extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return TextField(maxLength: 35,
       controller: controller,
       decoration: InputDecoration(
         labelText: hinttext,

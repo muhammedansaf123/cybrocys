@@ -96,7 +96,7 @@ class Doctorcharts extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<ChartData> chartData = [
       ChartData('Surgeries', 25, Colors.deepPurple),
-      ChartData('Consultation', 38, Colors.deepPurple),
+      ChartData('Consultation', 38, Colors.blueAccent),
       ChartData('pending', 34, Colors.orangeAccent),
       ChartData('Done', 52, Colors.green)
     ];
@@ -460,8 +460,8 @@ class Mybutton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
+      width: MediaQuery.of(context).size.width,
       height: 65,
-      width: 360,
       child: Container(
         child: Padding(
           padding: const EdgeInsets.only(top: 20.0),

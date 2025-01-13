@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/appointments/surgery_admit.dart';
+import 'package:first_app/surgeries_admit/surgery_admit.dart';
 import 'package:first_app/components/components.dart';
 import 'package:first_app/components/const.dart';
 import 'package:first_app/appointments/appointmentshow.dart';
-import 'package:first_app/appointments/medicalrecords.dart';
+import 'package:first_app/medical_records/medicalrecords.dart';
 import 'package:first_app/dashboard/drawer_widget.dart';
 import 'package:first_app/profile/hospital/hospital_details.dart';
 import 'package:first_app/profile/profile.dart';

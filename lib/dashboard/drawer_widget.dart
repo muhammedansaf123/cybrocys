@@ -1,5 +1,5 @@
-import 'package:first_app/appointments/medicalrecords.dart';
-import 'package:first_app/appointments/surgery_admit.dart';
+import 'package:first_app/medical_records/medicalrecords.dart';
+import 'package:first_app/surgeries_admit/surgery_admit.dart';
 import 'package:first_app/components/components.dart';
 import 'package:flutter/material.dart';
 

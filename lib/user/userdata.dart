@@ -12,7 +12,7 @@ class Userdata {
     if (documentSnapshot.exists) {
       Map<String, dynamic> data =
           documentSnapshot.data() as Map<String, dynamic>;
-      print(data);
+     
       return data;
     } else {
       throw Exception('User not found');

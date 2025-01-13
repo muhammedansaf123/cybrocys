@@ -49,7 +49,7 @@ class _MedicalrecordsState extends State<Medicalrecords> {
           return stringValue.contains(date);
         });
       }).toList();
-      print(_filteredRecords);
+     
     });
   }
 
@@ -63,7 +63,7 @@ class _MedicalrecordsState extends State<Medicalrecords> {
           return stringValue.contains(status);
         });
       }).toList();
-      print(_filteredRecords);
+      
     });
   }
 
