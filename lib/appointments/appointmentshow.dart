@@ -36,13 +36,12 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
   final uid = FirebaseAuth.instance.currentUser!.uid;
   @override
   void initState() {
+    fetchuserdata();
     if (widget.data['roles'] == 'patient') {
       clearQuery();
     } else {
       doctorQuery();
     }
-
-    fetchuserdata();
     super.initState();
   }
 
@@ -379,9 +378,9 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
         iconTheme: IconThemeData(color: Colors.white),
         backgroundColor: Colors.deepPurple,
       ),
-      body: Column(
-        children: [
-          if (widget.data['roles'] == 'patient') ...[
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
@@ -411,82 +410,85 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
             SizedBox(
               height: 5,
             ),
-            Row(
-              children: [
-                Expanded(
-                  child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5),
-                      child: Container(
-                        height: 50,
-                        child: ElevatedButton(
-                            style: ButtonStyle(
-                                backgroundColor:
-                                    WidgetStatePropertyAll(Colors.deepPurple)),
-                            onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          AppointmentsPage(data: widget.data)));
-                            },
-                            child: Text(
-                              "book now",
-                              style: TextStyle(color: Colors.white),
-                            )),
-                      )),
-                )
-              ],
+            if (widget.data['roles'] == 'patient') ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        child: Container(
+                          height: 50,
+                          child: ElevatedButton(
+                              style: ButtonStyle(
+                                  backgroundColor: WidgetStatePropertyAll(
+                                      Colors.deepPurple)),
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => AppointmentsPage(
+                                            data: widget.data)));
+                              },
+                              child: Text(
+                                "book now",
+                                style: TextStyle(color: Colors.white),
+                              )),
+                        )),
+                  )
+                ],
+              ),
+            ],
+            SizedBox(
+              height: 5,
+            ),
+            Container(
+              height: widget.data['roles'] == 'patient'
+                  ? 525
+                  : MediaQuery.of(context).size.height * 0.87,
+              child: StreamBuilder(
+                stream: query!.snapshots(),
+                builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    // ignore: avoid_print
+                    print('Error fetching data: ${snapshot.error}');
+                    return const Center(child: Text('Error fetching data'));
+                  }
+
+                  if (snapshot.hasData && snapshot.data!.docs.isEmpty) {
+                    return const Center(
+                        child: Text('No Appointments found found'));
+                  }
+                  return SizedBox(
+                    child: ListView.builder(
+                        itemCount: snapshot.data!.docs.length,
+                        itemBuilder: (context, index) {
+                          final appointmentdata = snapshot.data!.docs[index];
+                          final appointmentid =
+                              appointmentdata['appointmentid'];
+                          return Padding(
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 4), // Add vertical spacing here
+                              child: Appointmentshowtile(
+                                appointmentdata: appointmentdata,
+                                userdata: widget.data,
+                                ontap: () {},
+                                onPressed: () {
+                                  FirebaseFirestore.instance
+                                      .collection('appointments')
+                                      .doc(appointmentid)
+                                      .delete();
+                                },
+                              ));
+                        }),
+                  );
+                },
+              ),
             ),
           ],
-          SizedBox(
-            height: 5,
-          ),
-          Container(
-            height: widget.data['roles'] == 'patient'
-                ? 525
-                : MediaQuery.of(context).size.height * 0.87,
-            child: StreamBuilder(
-              stream: query!.snapshots(),
-              builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  // ignore: avoid_print
-                  print('Error fetching data: ${snapshot.error}');
-                  return const Center(child: Text('Error fetching data'));
-                }
-
-                if (snapshot.hasData && snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                      child: Text('No Appointments found found'));
-                }
-                return SizedBox(
-                  child: ListView.builder(
-                      itemCount: snapshot.data!.docs.length,
-                      itemBuilder: (context, index) {
-                        final appointmentdata = snapshot.data!.docs[index];
-                        final appointmentid = appointmentdata['appointmentid'];
-                        return Padding(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 4), // Add vertical spacing here
-                            child: Appointmentshowtile(
-                              appointmentdata: appointmentdata,
-                              userdata: widget.data,
-                              ontap: () {},
-                              onPressed: () {
-                                FirebaseFirestore.instance
-                                    .collection('appointments')
-                                    .doc(appointmentid)
-                                    .delete();
-                              },
-                            ));
-                      }),
-                );
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -527,6 +529,8 @@ class _MedicalRecordTileState extends State<Appointmentshowtile> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => DialogAppointmentcontainer(
+                          patentname: widget.appointmentdata['patientname'],
+                          doctorsname: widget.appointmentdata['doctorsname'],
                           patientid: widget.appointmentdata['patientid'],
                           reason: widget.appointmentdata['reason'],
                           appointmentid:
@@ -717,6 +721,8 @@ class _MedicalRecordTileState extends State<Appointmentshowtile> {
 class DialogAppointmentcontainer extends StatefulWidget {
   final Map userdata;
   final String patientid;
+  final String patentname;
+  final String doctorsname;
   final double rating;
   final String url;
   final String age;
@@ -733,6 +739,8 @@ class DialogAppointmentcontainer extends StatefulWidget {
   final String reason;
   const DialogAppointmentcontainer({
     super.key,
+    required this.patentname,
+    required this.doctorsname,
     required this.patientid,
     required this.status,
     required this.age,
@@ -958,6 +966,8 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) => SurgeryAdmitForms(
+                                              patientname: widget.patentname,
+                                              doctorsname: widget.doctorsname,
                                               patientid: widget.patientid,
                                               reason: widget.reason,
                                               userdata: widget.userdata,
@@ -979,6 +989,8 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) => SurgeryAdmitForms(
+                                              patientname: widget.patentname,
+                                              doctorsname: widget.doctorsname,
                                               patientid: widget.patientid,
                                               reason: widget.reason,
                                               userdata: widget.userdata,

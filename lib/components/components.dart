@@ -464,7 +464,7 @@ class Mybutton extends StatelessWidget {
       height: 65,
       child: Container(
         child: Padding(
-          padding: const EdgeInsets.only(top: 20.0),
+          padding: const EdgeInsets.only(top: 20.0,left: 10,right: 10),
           child: ElevatedButton(
               style: ButtonStyle(
                   backgroundColor: WidgetStatePropertyAll(Colors.deepPurple)),

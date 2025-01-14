@@ -348,34 +348,38 @@ class _HomepageState extends State<Homepage> {
                                       SizedBox(
                                         height: 10,
                                       ),
-                                      Row(
+                                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                         children: [
                                           SizedBox(
                                             width: 10,
                                           ),
-                                          LabResultsTile(
-                                            progresscolor: Colors.red,
-                                            iconcolor: Colors.red,
-                                            percentage: 0.4,
-                                            icons: Icons.water_drop_outlined,
-                                            color: const Color.fromARGB(
-                                                    255, 151, 94, 90)
-                                                .withOpacity(0.3),
-                                            count: '2.56 cells/L',
-                                            title: 'Blood Count',
+                                          Expanded(
+                                            child: LabResultsTile(
+                                              progresscolor: Colors.red,
+                                              iconcolor: Colors.red,
+                                              percentage: 0.4,
+                                              icons: Icons.water_drop_outlined,
+                                              color: const Color.fromARGB(
+                                                      255, 151, 94, 90)
+                                                  .withOpacity(0.3),
+                                              count: '2.56 cells/L',
+                                              title: 'Blood Count',
+                                            ),
                                           ),
-                                          Spacer(),
-                                          LabResultsTile(
-                                            progresscolor: Colors.green,
-                                            iconcolor: Colors.green,
-                                            percentage: 0.9,
-                                            icons: Icons.healing_outlined,
-                                            color: const Color.fromARGB(
-                                                    255, 111, 145, 112)
-                                                .withOpacity(0.3)
-                                                .withOpacity(0.3),
-                                            count: '75 mg/dL ',
-                                            title: 'Sugar Count',
+                                          SizedBox(width: 15,),
+                                          Expanded(
+                                            child: LabResultsTile(
+                                              progresscolor: Colors.green,
+                                              iconcolor: Colors.green,
+                                              percentage: 0.9,
+                                              icons: Icons.healing_outlined,
+                                              color: const Color.fromARGB(
+                                                      255, 111, 145, 112)
+                                                  .withOpacity(0.3)
+                                                  .withOpacity(0.3),
+                                              count: '75 mg/dL ',
+                                              title: 'Sugar Count',
+                                            ),
                                           ),
                                           SizedBox(
                                             width: 10,
@@ -385,34 +389,38 @@ class _HomepageState extends State<Homepage> {
                                       SizedBox(
                                         height: 10,
                                       ),
-                                      Row(
+                                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                         children: [
                                           SizedBox(
                                             width: 10,
                                           ),
-                                          LabResultsTile(
-                                            progresscolor: Colors.orange,
-                                            iconcolor: Colors.orange,
-                                            percentage: 0.7,
-                                            icons: Icons.bolt_sharp,
-                                            color: const Color.fromARGB(
-                                                    255, 185, 148, 92)
-                                                .withOpacity(0.3),
-                                            count: '140 mmHg',
-                                            title: 'BP',
+                                          Expanded(
+                                            child: LabResultsTile(
+                                              progresscolor: Colors.orange,
+                                              iconcolor: Colors.orange,
+                                              percentage: 0.7,
+                                              icons: Icons.bolt_sharp,
+                                              color: const Color.fromARGB(
+                                                      255, 185, 148, 92)
+                                                  .withOpacity(0.3),
+                                              count: '140 mmHg',
+                                              title: 'BP',
+                                            ),
                                           ),
-                                          Spacer(),
-                                          LabResultsTile(
-                                            progresscolor: Colors.green,
-                                            iconcolor: Colors.green,
-                                            percentage: 0.9,
-                                            icons: Icons.health_and_safety,
-                                            color: const Color.fromARGB(
-                                                    255, 111, 145, 112)
-                                                .withOpacity(0.3)
-                                                .withOpacity(0.3),
-                                            count: '180 mg/dl',
-                                            title: 'Cholesterol',
+                                         SizedBox(width: 15,),
+                                          Expanded(
+                                            child: LabResultsTile(
+                                              progresscolor: Colors.green,
+                                              iconcolor: Colors.green,
+                                              percentage: 0.9,
+                                              icons: Icons.health_and_safety,
+                                              color: const Color.fromARGB(
+                                                      255, 111, 145, 112)
+                                                  .withOpacity(0.3)
+                                                  .withOpacity(0.3),
+                                              count: '180 mg/dl',
+                                              title: 'Cholesterol',
+                                            ),
                                           ),
                                           SizedBox(
                                             width: 10,

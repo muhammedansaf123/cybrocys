@@ -11,10 +11,14 @@ class SurgeryAdmitForms extends StatefulWidget {
   final String reason;
   final String appointmentid;
   final String patientid;
+  final String patientname;
+  final String doctorsname;
   final bool issurgery;
   final Map userdata;
   const SurgeryAdmitForms(
       {super.key,
+      required this.patientname,
+      required this.doctorsname,
       required this.patientid,
       required this.userdata,
       required this.issurgery,
@@ -28,7 +32,7 @@ class SurgeryAdmitForms extends StatefulWidget {
 class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
   TextEditingController typecontroller = TextEditingController();
   TextEditingController datecontroller = TextEditingController();
- 
+
   //TextEditingController notecontroller = TextEditingController();
   TextEditingController roomController = TextEditingController();
   TextEditingController anesthesiaController = TextEditingController();
@@ -41,8 +45,10 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
 
   TextEditingController specialInstructionsController = TextEditingController();
   String uid = FirebaseAuth.instance.currentUser!.uid;
+
   // Updated surgery method
-  void surgery() {
+
+  void surgery() async {
     try {
       FirebaseFirestore.instance
           .collection('appointments')
@@ -55,10 +61,11 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
         'id': widget.appointmentid,
         'typeofsurgery': typecontroller.text,
         'date': datecontroller.text,
-        
         'reason': widget.reason,
         'doctorid': uid,
-        
+        'status': 'Pending',
+        'patientsname': widget.patientname,
+        'doctorsname': widget.doctorsname,
         'patientid': widget.patientid,
         'room': roomController.text,
         'anesthesiaType': anesthesiaController.text,
@@ -72,7 +79,9 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
   }
 
   // Updated admit method
-  void admit() {
+  void admit() async {
+    final patientdata = await Userdata(uid: widget.patientid).getData();
+    print(patientdata['name']);
     try {
       FirebaseFirestore.instance
           .collection('appointments')
@@ -85,8 +94,10 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
         'id': widget.appointmentid,
         'reason': widget.reason,
         'doctorid': uid,
-        
+        'patientsname': widget.patientname,
+        'doctorsname': widget.doctorsname,
         'patientid': widget.patientid,
+        'status': 'Pending',
         'ward': wardController.text,
         'durationOfStay': durationController.text,
         'admissionDate': datecontroller.text,
@@ -102,8 +113,7 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
   void _clearFields() {
     typecontroller.clear();
     datecontroller.clear();
-   
-    
+
     roomController.clear();
     anesthesiaController.clear();
     surgeonController.clear();
@@ -124,6 +134,11 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
   }
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
