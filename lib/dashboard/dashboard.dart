@@ -2,14 +2,14 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/surgeries_admit/surgery_admit.dart';
-import 'package:first_app/components/components.dart';
-import 'package:first_app/components/const.dart';
-import 'package:first_app/appointments/appointmentshow.dart';
-import 'package:first_app/medical_records/medicalrecords.dart';
-import 'package:first_app/dashboard/drawer_widget.dart';
-import 'package:first_app/profile/hospital/hospital_details.dart';
-import 'package:first_app/profile/profile.dart';
+import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
+import 'package:hospital_managment/components/components.dart';
+import 'package:hospital_managment/components/const.dart';
+import 'package:hospital_managment/appointments/appointmentshow.dart';
+import 'package:hospital_managment/medical_records/medicalrecords.dart';
+import 'package:hospital_managment/dashboard/drawer_widget.dart';
+import 'package:hospital_managment/profile/hospital/hospital_details.dart';
+import 'package:hospital_managment/profile/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
@@ -80,7 +80,7 @@ class _HomepageState extends State<Homepage> {
           await FirebaseFirestore.instance
               .collection('patient')
               .doc(id)
-              .update({
+              .set({
             'name': data['name'],
             'uid': id,
           });

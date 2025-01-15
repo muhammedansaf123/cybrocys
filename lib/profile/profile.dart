@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/components/components.dart';
-import 'package:first_app/profile/edit_profile.dart';
-import 'package:first_app/profile/hospital/hospital_details.dart';
-import 'package:first_app/settings/settings_page.dart';
+import 'package:hospital_managment/components/components.dart';
+import 'package:hospital_managment/profile/edit_profile.dart';
+import 'package:hospital_managment/profile/hospital/hospital_details.dart';
+import 'package:hospital_managment/settings/settings_page.dart';
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatefulWidget {

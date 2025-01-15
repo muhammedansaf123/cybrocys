@@ -1,4 +1,4 @@
-name: first_app
+name: hospital_managment
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -40,6 +40,7 @@ dependencies:
   image_picker: ^1.0.7
   intl: ^0.19.0
   local_auth: ^2.3.0
+  lottie: 
   pdf: ^3.11.1
   percent_indicator: ^4.2.4
   printing: ^5.13.4
@@ -55,7 +56,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
-
+  change_app_package_name: ^1.4.0
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 # The following section is specific to Flutter packages.

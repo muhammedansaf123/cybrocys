@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:custom_rating_bar/custom_rating_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/profile/edit_profile.dart';
+import 'package:hospital_managment/profile/edit_profile.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -95,7 +95,7 @@ TextEditingController agecontroller = TextEditingController();
 TextEditingController descriptioncontroller = TextEditingController();
 String dropdownvalue = '8.00 AM - 9.00 AM';
 final sDateFormate = "dd/MM/yyyy";
-DateTime? selectedDate;
+DateTime? _selectedDate;
 String? date;
 String? appointmentDate;
 var gender = [
@@ -118,7 +118,7 @@ class _AppointmenttileState extends State<Appointmenttile> {
     DateTime today = DateTime.now();
     String reasons = reasoncontroller.text;
     final appointmentid = Uuid().v4();
-    if (selectedDate!.isAfter(today) || selectedDate!.day == today.day) {
+    if (_selectedDate!.isAfter(today) || _selectedDate!.day == today.day) {
       try {
         String doctorName = widget.name.toLowerCase();
         List<String> nameSubstrings = [];
@@ -157,7 +157,7 @@ class _AppointmenttileState extends State<Appointmenttile> {
           'patientid': FirebaseAuth.instance.currentUser!.uid,
           'approved': false,
           'timeslot': dropdownvalue,
-          'date': selectedDate,
+          'date': _selectedDate,
           'doctorsname': widget.name,
           'appointmentid': appointmentid,
           'patientname': namecontroller.text,
@@ -177,7 +177,7 @@ class _AppointmenttileState extends State<Appointmenttile> {
           setState(() {
             selectedCategory = 'Male';
             dropdownvalue = '8.00 AM - 9.00 AM';
-            selectedDate = DateTime.now();
+            _selectedDate = DateTime.now();
           });
         }
         Navigator.pop(context);
@@ -193,7 +193,7 @@ class _AppointmenttileState extends State<Appointmenttile> {
         agecontroller.text.isEmpty) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('please fill all the fields')));
-    } else if (!selectedDate!.isAfter(today)) {
+    } else if (!_selectedDate!.isAfter(today)) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Date must be selected of future')));
     }
@@ -217,7 +217,7 @@ class _AppointmenttileState extends State<Appointmenttile> {
         elevation: 15,
         child: ListTile(
           onTap: () {
-            print(selectedDate);
+            print(_selectedDate);
             Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -349,7 +349,7 @@ class _DialogContainerState extends State<DialogContainer> {
   void initState() {
     if (mounted) {
       setState(() {
-        selectedDate = DateTime.now();
+        _selectedDate = DateTime.now();
         print(DateTime.now());
 
         date = DateFormat("dd/MM/yyyy").format(DateTime.now());
@@ -556,9 +556,9 @@ class _DialogContainerState extends State<DialogContainer> {
                   );
                   if (pickedDate != null) {
                     setState(() {
-                      selectedDate = pickedDate;
+                      _selectedDate = pickedDate;
                       appointmentDate =
-                          DateFormat('dd-MM-yyyy').format(selectedDate!);
+                          DateFormat('dd-MM-yyyy').format(_selectedDate!);
                     });
                   }
                 },
@@ -573,7 +573,7 @@ class _DialogContainerState extends State<DialogContainer> {
                   child: Row(
                     children: [
                       Text(
-                        DateFormat('dd-MM-yyyy').format(selectedDate!),
+                        DateFormat('dd-MM-yyyy').format(_selectedDate!),
                         style: TextStyle(color: Colors.black87),
                       ),
                       Spacer(),

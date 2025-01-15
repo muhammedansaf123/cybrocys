@@ -5,20 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "first_app",
+            "name": "hospital_managment",
             "request": "launch",
             "type": "dart",
             "args": ["--no-enable-impeller"]
         },
         {
-            "name": "first_app (profile mode)",
+            "name": "hospital_managment (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile",
             "args": ["--no-enable-impeller"]
         },
         {
-            "name": "first_app (release mode)",
+            "name": "hospital_managment (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release",

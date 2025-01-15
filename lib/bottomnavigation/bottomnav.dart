@@ -1,6 +1,6 @@
-import 'package:first_app/dashboard/dashboard.dart';
-import 'package:first_app/profile/profile.dart';
-import 'package:first_app/settings/settings_page.dart';
+import 'package:hospital_managment/dashboard/dashboard.dart';
+import 'package:hospital_managment/profile/profile.dart';
+import 'package:hospital_managment/settings/settings_page.dart';
 import 'package:flutter/material.dart';
 
 class Bottomnav extends StatefulWidget {

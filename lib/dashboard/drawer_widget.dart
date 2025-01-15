@@ -1,6 +1,6 @@
-import 'package:first_app/medical_records/medicalrecords.dart';
-import 'package:first_app/surgeries_admit/surgery_admit.dart';
-import 'package:first_app/components/components.dart';
+import 'package:hospital_managment/medical_records/medicalrecords.dart';
+import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
+import 'package:hospital_managment/components/components.dart';
 import 'package:flutter/material.dart';
 
 class Drawerwidget extends StatelessWidget {

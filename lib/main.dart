@@ -1,10 +1,10 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:first_app/firebase_options.dart';
-import 'package:first_app/dashboard/dashboard.dart';
-import 'package:first_app/login/login_page.dart';
-import 'package:first_app/user/userstate.dart';
+import 'package:hospital_managment/firebase_options.dart';
+import 'package:hospital_managment/dashboard/dashboard.dart';
+import 'package:hospital_managment/login/login_page.dart';
+import 'package:hospital_managment/user/userstate.dart';
 
 import 'package:flutter/material.dart';
 

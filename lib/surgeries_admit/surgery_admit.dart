@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/components/components.dart';
-import 'package:first_app/surgeries_admit/invoice_stopwatch.dart';
-import 'package:first_app/user/userdata.dart';
+
+import 'package:hospital_managment/surgeries_admit/invoice_stopwatch.dart';
+import 'package:hospital_managment/user/userdata.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -20,12 +20,12 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
   final TextEditingController _searchControllersurgery =
       TextEditingController();
   final TextEditingController _searchControlleradmits = TextEditingController();
-  List<Map<String, dynamic>> _filteredsurgeries = [];
-  List<Map<String, dynamic>> _allsurgeries = [];
-  List<Map<String, dynamic>> _filteredadmits = [];
-  List<Map<String, dynamic>> _alladmites = [];
+  List<Map<String, dynamic>> filteredsurgeries = [];
+  List<Map<String, dynamic>> allsurgeries = [];
+  List<Map<String, dynamic>> filteredadmits = [];
+  List<Map<String, dynamic>> alladmites = [];
 
-  String currentfilter = 'None';
+  String currentfilter = 'Date';
   DateTime? selectedDatesurgery = DateTime.now();
   DateTime? selectedDateadmit = DateTime.now();
   bool isFiltersurgeries = false;
@@ -40,7 +40,7 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
     isFiltersurgeries = true;
     final searchText = _searchControllersurgery.text.toLowerCase();
     setState(() {
-      _filteredsurgeries = _allsurgeries.where((record) {
+      filteredsurgeries = allsurgeries.where((record) {
         return record.values.any((value) {
           final stringValue = value.toString().toLowerCase();
           return stringValue.contains(searchText);
@@ -53,7 +53,7 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
     isFiltersurgeries = true;
     final searchText = _searchControlleradmits.text.toLowerCase();
     setState(() {
-      _filteredadmits = _alladmites.where((record) {
+      filteredadmits = alladmites.where((record) {
         return record.values.any((value) {
           final stringValue = value.toString().toLowerCase();
           return stringValue.contains(searchText);
@@ -64,39 +64,39 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
 
   void clearfiltersurgeries() {
     setState(() {
-      _filteredsurgeries = _filteredadmits;
+      filteredsurgeries = filteredadmits;
     });
   }
 
   void clearfilteradmits() {
     setState(() {
-      _filteredadmits = _filteredsurgeries;
+      filteredadmits = filteredsurgeries;
     });
   }
 
   void consultationfiltersurgery(String date) {
     setState(() {
       isFiltersurgeries = true;
-      _filteredsurgeries = _allsurgeries.where((record) {
+      filteredsurgeries = allsurgeries.where((record) {
         return record.values.any((value) {
           final stringValue = value.toString().toLowerCase();
           return stringValue.contains(date);
         });
       }).toList();
-      //print(_filteredsurgeries);
+      //print(filteredsurgeries);
     });
   }
 
   void consultationfilteradmit(String date) {
     setState(() {
       isFilteradmits = true;
-      _filteredadmits = _alladmites.where((record) {
+      filteredadmits = alladmites.where((record) {
         return record.values.any((value) {
           final stringValue = value.toString().toLowerCase();
           return stringValue.contains(date);
         });
       }).toList();
-      //print(_filteredsurgeries);
+      //print(filteredsurgeries);
     });
   }
 
@@ -104,13 +104,13 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
     print(status);
     setState(() {
       isFiltersurgeries = true;
-      _filteredsurgeries = _allsurgeries.where((record) {
+      filteredsurgeries = allsurgeries.where((record) {
         return record.values.any((value) {
           final stringValue = value.toString().toLowerCase();
           return stringValue.contains(status);
         });
       }).toList();
-      // print(_filteredadmits);
+      // print(filteredadmits);
     });
   }
 
@@ -118,21 +118,20 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
     print(status);
     setState(() {
       isFilteradmits = true;
-      _filteredadmits = _alladmites.where((record) {
+      filteredadmits = alladmites.where((record) {
         return record.values.any((value) {
           final stringValue = value.toString().toLowerCase();
           return stringValue.contains(status);
         });
       }).toList();
-      // print(_filteredadmits);
+      // print(filteredadmits);
     });
   }
-
-  void consultationquery() {}
 
   @override
   void initState() {
     super.initState();
+
     fetchuserdata();
     print('fetching data....${userdata['role']}');
     if (userdata['roles'] == 'patient') {
@@ -174,7 +173,11 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
   }
 
   void patientquery() {
-    setState(() {});
+    setState(() {
+      surgeyQuery = FirebaseFirestore.instance.collection('surgeries').where(
+          'patientid',
+          isEqualTo: FirebaseAuth.instance.currentUser!.uid);
+    });
   }
 
   void doctorQuery() {
@@ -185,12 +188,21 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
     });
   }
 
+  void clearQuery() {
+    print('hello');
+    setState(() {
+      if (_tabController.index == 0) {
+        filteredsurgeries = allsurgeries;
+      }
+      if (_tabController.index == 1) {
+        filteredadmits = alladmites;
+      }
+    });
+    Navigator.pop(context);
+  }
+
   @override
   void dispose() {
-    _allsurgeries = [];
-    _alladmites = [];
-    _filteredadmits = [];
-    _filteredsurgeries = [];
     _tabController.dispose();
     super.dispose();
   }
@@ -234,85 +246,204 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
                                         ),
                                       ),
                                       SizedBox(height: 5),
-                                      SizedBox(height: 5),
+                                      Text(
+                                        "Select a filtering method",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
                                       SizedBox(
                                         height: 10,
                                       ),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          color: Colors.grey[200],
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Center(
-                                          child: _tabController.index == 0
-                                              ? TableCalendar(
-                                                  selectedDayPredicate: (day) {
-                                                    if (day ==
-                                                        selectedDatesurgery) {
-                                                      return true;
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.only(left: 15),
+                                            width: 150,
+                                            decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: Colors.black,
+                                                    width: 2),
+                                                borderRadius:
+                                                    BorderRadius.circular(10)),
+                                            child: DropdownButton<String>(
+                                              underline:
+                                                  DropdownButtonHideUnderline(
+                                                      child: SizedBox()),
+                                              value: currentfilter,
+                                              items: <String>[
+                                                'Date',
+                                                'Status',
+                                              ].map((String value) {
+                                                return DropdownMenuItem<String>(
+                                                  value: value,
+                                                  child: Text(value),
+                                                );
+                                              }).toList(),
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  currentfilter = value!;
+                                                  print(currentfilter);
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                          Spacer(),
+                                          ElevatedButton(
+                                              onPressed: () {
+                                                clearQuery();
+                                              },
+                                              child: Text("Clear Filter"))
+                                        ],
+                                      ),
+                                      SizedBox(
+                                        height: 10,
+                                      ),
+                                      if (currentfilter == 'Status') ...[
+                                        Container(
+                                          height: 200,
+                                          child: Column(
+                                            children: [
+                                              Card(
+                                                child: ListTile(
+                                                  onTap: () {
+                                                    if (_tabController.index ==
+                                                        0) {
+                                                      statusFiltersurgeries(
+                                                          'success');
                                                     } else {
-                                                      return false;
+                                                      statusFilteradmits(
+                                                          'success');
                                                     }
                                                   },
-                                                  onDaySelected:
-                                                      (start, selected) {
-                                                    selectedDatesurgery =
-                                                        selected;
-                                                    setState(() {
+                                                  leading: Icon(
+                                                      Icons.check_circle,
+                                                      color: Colors.green),
+                                                  title: Text(
+                                                    'Success',
+                                                    style: TextStyle(
+                                                      color: Colors.green,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(height: 10),
+                                              Card(
+                                                child: ListTile(
+                                                  onTap: () {
+                                                    if (_tabController.index ==
+                                                        0) {
+                                                      statusFiltersurgeries(
+                                                          'pending');
+                                                    } else {
+                                                      statusFilteradmits(
+                                                          'pending');
+                                                    }
+                                                  },
+                                                  leading: Icon(Icons.pending,
+                                                      color: Colors.orange),
+                                                  title: Text(
+                                                    'Pending',
+                                                    style: TextStyle(
+                                                      color: Colors.orange,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      ],
+                                      if (currentfilter == 'Date') ...[
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            color: Colors.grey[200],
+                                          ),
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Center(
+                                            child: _tabController.index == 0
+                                                ? TableCalendar(
+                                                    selectedDayPredicate:
+                                                        (day) {
+                                                      if (day ==
+                                                          selectedDatesurgery) {
+                                                        return true;
+                                                      } else {
+                                                        return false;
+                                                      }
+                                                    },
+                                                    onDaySelected:
+                                                        (start, selected) {
                                                       selectedDatesurgery =
                                                           selected;
-                                                    });
+                                                      setState(() {
+                                                        selectedDatesurgery =
+                                                            selected;
+                                                      });
 
-                                                    consultationfiltersurgery(
-                                                        DateFormat('dd-MM-yyyy')
-                                                            .format(
-                                                                selectedDatesurgery!));
+                                                      consultationfiltersurgery(
+                                                          DateFormat(
+                                                                  'dd-MM-yyyy')
+                                                              .format(
+                                                                  selectedDatesurgery!));
 
-                                                    //print('selected:$selected');
-                                                  },
-                                                  calendarFormat:
-                                                      CalendarFormat.month,
-                                                  onFormatChanged: (format) {},
-                                                  focusedDay:
-                                                      selectedDatesurgery!,
-                                                  firstDay: DateTime(2000),
-                                                  lastDay: DateTime(2100))
-                                              : TableCalendar(
-                                                  selectedDayPredicate: (day) {
-                                                    if (day ==
-                                                        selectedDateadmit) {
-                                                      return true;
-                                                    } else {
-                                                      return false;
-                                                    }
-                                                  },
-                                                  onDaySelected:
-                                                      (start, selected) {
-                                                    selectedDateadmit =
-                                                        selected;
-                                                    setState(() {
+                                                      //print('selected:$selected');
+                                                    },
+                                                    calendarFormat:
+                                                        CalendarFormat.month,
+                                                    onFormatChanged:
+                                                        (format) {},
+                                                    focusedDay:
+                                                        selectedDatesurgery!,
+                                                    firstDay: DateTime(2000),
+                                                    lastDay: DateTime(2100))
+                                                : TableCalendar(
+                                                    selectedDayPredicate:
+                                                        (day) {
+                                                      if (day ==
+                                                          selectedDateadmit) {
+                                                        return true;
+                                                      } else {
+                                                        return false;
+                                                      }
+                                                    },
+                                                    onDaySelected:
+                                                        (start, selected) {
                                                       selectedDateadmit =
                                                           selected;
-                                                    });
+                                                      setState(() {
+                                                        selectedDateadmit =
+                                                            selected;
+                                                      });
 
-                                                    consultationfilteradmit(
-                                                        DateFormat('dd-MM-yyyy')
-                                                            .format(
-                                                                selectedDateadmit!));
+                                                      consultationfilteradmit(
+                                                          DateFormat(
+                                                                  'dd-MM-yyyy')
+                                                              .format(
+                                                                  selectedDateadmit!));
 
-                                                    //print('selected:$selected');
-                                                  },
-                                                  calendarFormat:
-                                                      CalendarFormat.month,
-                                                  onFormatChanged: (format) {},
-                                                  focusedDay:
-                                                      selectedDateadmit!,
-                                                  firstDay: DateTime(2000),
-                                                  lastDay: DateTime(2100)),
+                                                      //print('selected:$selected');
+                                                    },
+                                                    calendarFormat:
+                                                        CalendarFormat.month,
+                                                    onFormatChanged:
+                                                        (format) {},
+                                                    focusedDay:
+                                                        selectedDateadmit!,
+                                                    firstDay: DateTime(2000),
+                                                    lastDay: DateTime(2100)),
+                                          ),
                                         ),
-                                      ),
+                                      ]
                                     ],
                                   ),
                                 ),
@@ -353,6 +484,7 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
                             child: SizedBox(
                               height: 60,
                               child: TextField(
+                                autofocus: false,
                                 onChanged: (value) {
                                   _filtersurgeries();
                                 },
@@ -389,37 +521,38 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
                                 }
 
                                 if (snapshot.hasData) {
-                                  _allsurgeries = snapshot.data!.docs
+                                  allsurgeries = snapshot.data!.docs
                                       .map<Map<String, dynamic>>((doc) =>
                                           doc.data() as Map<String, dynamic>)
                                       .toList();
                                 }
 
-                                if (_filteredsurgeries.isEmpty &&
+                                if (filteredsurgeries.isEmpty &&
                                     isFiltersurgeries == false) {
                                   print('second');
 
-                                  _filteredsurgeries = _allsurgeries;
+                                  filteredsurgeries = allsurgeries;
                                 }
-                                if (_filteredsurgeries.isEmpty &&
+                                if (filteredsurgeries.isEmpty &&
                                     filterdate != null) {
                                   print('third');
-                                  _filteredsurgeries = _allsurgeries;
+                                  filteredsurgeries = allsurgeries;
                                   return const Center(
                                       child: Text('No records found'));
                                 }
                                 return SizedBox(
                                   child: ListView.builder(
-                                      itemCount: _filteredsurgeries.length,
+                                      itemCount: filteredsurgeries.length,
                                       itemBuilder: (context, index) {
                                         final surgerydata =
-                                            _filteredsurgeries[index];
+                                            filteredsurgeries[index];
 
                                         return Padding(
                                             padding: EdgeInsets.symmetric(
                                                 vertical:
                                                     4), // Add vertical spacing here
                                             child: SurgerAdmitTile(
+                                                trigger: clearQuery,
                                                 issurgery: true,
                                                 surgeryadmitdata: surgerydata,
                                                 userdata: userdata));
@@ -475,37 +608,37 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
                                 }
 
                                 if (snapshot.hasData) {
-                                  _alladmites = snapshot.data!.docs
+                                  alladmites = snapshot.data!.docs
                                       .map<Map<String, dynamic>>((doc) =>
                                           doc.data() as Map<String, dynamic>)
                                       .toList();
                                 }
 
-                                if (_filteredadmits.isEmpty &&
+                                if (filteredadmits.isEmpty &&
                                     isFilteradmits == false) {
                                   print('second');
 
-                                  _filteredadmits = _alladmites;
+                                  filteredadmits = alladmites;
                                 }
-                                if (_filteredadmits.isEmpty &&
+                                if (filteredadmits.isEmpty &&
                                     filterdate != null) {
                                   print('third');
-                                  _filteredadmits = _alladmites;
+                                  filteredadmits = alladmites;
                                   return const Center(
                                       child: Text('No records found'));
                                 }
                                 return SizedBox(
                                   child: ListView.builder(
-                                      itemCount: _filteredadmits.length,
+                                      itemCount: filteredadmits.length,
                                       itemBuilder: (context, index) {
-                                        final admitdata =
-                                            _filteredadmits[index];
+                                        final admitdata = filteredadmits[index];
 
                                         return Padding(
                                             padding: EdgeInsets.symmetric(
                                                 vertical:
                                                     4), // Add vertical spacing here
                                             child: SurgerAdmitTile(
+                                                trigger: clearQuery,
                                                 issurgery: false,
                                                 surgeryadmitdata: admitdata,
                                                 userdata: userdata));
@@ -529,10 +662,11 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
 class SurgerAdmitTile extends StatefulWidget {
   final bool issurgery;
   final Map<String, dynamic> surgeryadmitdata;
-
+  final void Function()? trigger;
   final Map userdata;
   const SurgerAdmitTile({
     super.key,
+    required this.trigger,
     required this.issurgery,
     required this.surgeryadmitdata,
     required this.userdata,
@@ -541,6 +675,8 @@ class SurgerAdmitTile extends StatefulWidget {
   @override
   State<SurgerAdmitTile> createState() => _MedicalRecordTileState();
 }
+
+bool isloading = false;
 
 class _MedicalRecordTileState extends State<SurgerAdmitTile> {
   @override
@@ -593,29 +729,52 @@ class _MedicalRecordTileState extends State<SurgerAdmitTile> {
                     if (documentSnapshot.exists) {
                       final data =
                           documentSnapshot.data() as Map<String, dynamic>;
+
+                      final String role = 'patient';
+                      final String id = data['id'];
+                      final String type = data['type'];
+                      final String payment = widget.surgeryadmitdata['payment'];
+                      final String invoiceNumber = data['invoiceNumber'];
+                      final String patientName = data['patientName'];
+                      final String patientAddress = data['patientAddress'];
+                      final String patientPhone = data['patientPhone'];
+                      final DateTime invoiceDate =
+                          DateTime.parse(data['invoiceDate']);
+                      final DateTime dueDate = DateTime.parse(data['dueDate']);
+                      final List<Map<String, dynamic>> items =
+                          List<Map<String, dynamic>>.from(data['items']);
+                      final double subTotal = data['subTotal'];
+                      final double taxRate = data['taxRate'];
+                      final double taxAmount = data['taxAmount'];
+                      final double totalAmount = data['totalAmount'];
+                      final String notes = data['notes'];
+
                       Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => InvoiceWidget(
-                              id: data['id'],
-                              type: data['type'],
-                              invoiceNumber: data['invoiceNumber'],
-                              patientName: data['patientName'],
-                              patientAddress: data['patientAddress'],
-                              patientPhone: data['patientPhone'],
-                              invoiceDate: DateTime.parse(data['invoiceDate']),
-                              dueDate: DateTime.parse(data['dueDate']),
-                              items: List<Map<String, dynamic>>.from(
-                                  data['items']),
-                              subTotal: data['subTotal'],
-                              taxRate: data['taxRate'],
-                              taxAmount: data['taxAmount'],
-                              totalAmount: data['totalAmount'],
-                              notes: data['notes'],
-                            ),
-                          ));
+                        context,
+                        MaterialPageRoute<bool>(
+                          builder: (context) => InvoiceWidget(
+                            onTriggerFunction: widget.trigger!,
+                            role: role,
+                            id: id,
+                            payment: payment,
+                            type: type,
+                            invoiceNumber: invoiceNumber,
+                            patientName: patientName,
+                            patientAddress: patientAddress,
+                            patientPhone: patientPhone,
+                            invoiceDate: invoiceDate,
+                            dueDate: dueDate,
+                            items: items,
+                            subTotal: subTotal,
+                            taxRate: taxRate,
+                            taxAmount: taxAmount,
+                            totalAmount: totalAmount,
+                            notes: notes,
+                          ),
+                        ),
+                      );
                     } else {
-                      print("no document exists");
+                      print("no document exist");
                     }
                   });
                 } catch (e) {
@@ -687,49 +846,73 @@ class _MedicalRecordTileState extends State<SurgerAdmitTile> {
                         ],
                       ),
                     ),
-                    Expanded(
-                      flex: 1,
-                      child: Container(
-                        height: 100,
-                        child: Column(
-                          children: [
-                            Text(
-                              widget.issurgery
-                                  ? 'Room: ${widget.surgeryadmitdata['room']}'
-                                  : 'Ward: ${widget.surgeryadmitdata['ward']}',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                    widget.surgeryadmitdata['payment'] == 'notpaid'
+                        ? Expanded(
+                            flex: 1,
+                            child: Container(
+                              height: 100,
+                              child: Column(
+                                children: [
+                                  Text(
+                                    widget.issurgery
+                                        ? 'Room: ${widget.surgeryadmitdata['room']}'
+                                        : 'Ward: ${widget.surgeryadmitdata['ward']}',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 15,
+                                  ),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            widget.surgeryadmitdata['status'] ==
+                                                    'Pending'
+                                                ? Colors.orange
+                                                : Colors.green,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        widget.surgeryadmitdata['status'],
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Spacer()
+                                ],
                               ),
                             ),
-                            SizedBox(height: 15,),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: widget.surgeryadmitdata['status'] ==
-                                          'Pending'
-                                      ? Colors.orange
-                                      : Colors.green,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  widget.surgeryadmitdata['status'],
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                          )
+                        : Expanded(
+                            child: Column(
+                            children: [
+                              Container(
+                                height: 50,
+                                child: Center(
+                                  child: Image.asset(
+                                    'assets/success.png',
+                                    scale: 4,
                                   ),
                                 ),
                               ),
-                            ),
-                            Spacer()
-                          ],
-                        ),
-                      ),
-                    )
+                              Text(
+                                "Paid",
+                                style: TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold),
+                              )
+                            ],
+                          ))
                   ],
                 ),
               ),

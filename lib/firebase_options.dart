@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '927626021690',
     projectId: 'cybrosys-de66e',
     storageBucket: 'cybrosys-de66e.firebasestorage.app',
-    iosBundleId: 'com.cybrosis.firstApp',
+    iosBundleId: 'com.cybrosys.firstApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '927626021690',
     projectId: 'cybrosys-de66e',
     storageBucket: 'cybrosys-de66e.firebasestorage.app',
-    iosBundleId: 'com.cybrosis.firstApp',
+    iosBundleId: 'com.cybrosys.firstApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.cybrosis" "\0"
-            VALUE "FileDescription", "first_app" "\0"
+            VALUE "CompanyName", "com.cybrosys" "\0"
+            VALUE "FileDescription", "hospital_managment" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "first_app" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 com.cybrosis. All rights reserved." "\0"
-            VALUE "OriginalFilename", "first_app.exe" "\0"
-            VALUE "ProductName", "first_app" "\0"
+            VALUE "InternalName", "hospital_managment" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2024 com.cybrosys. All rights reserved." "\0"
+            VALUE "OriginalFilename", "hospital_managment.exe" "\0"
+            VALUE "ProductName", "hospital_managment" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

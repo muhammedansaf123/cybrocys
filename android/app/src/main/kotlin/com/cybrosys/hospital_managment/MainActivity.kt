@@ -1,4 +1,4 @@
-package com.cybrosis.first_app
+package com.cybrosys.hospital_managment
 
 
 

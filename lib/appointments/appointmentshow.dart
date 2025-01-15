@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/surgeries_admit/surgery_admit.dart';
-import 'package:first_app/surgeries_admit/surgery_admit_forms.dart';
-import 'package:first_app/components/components.dart';
-import 'package:first_app/appointments/appointmentsbooking.dart';
-import 'package:first_app/user/userdata.dart';
+import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
+import 'package:hospital_managment/surgeries_admit/surgery_admit_forms.dart';
+import 'package:hospital_managment/components/components.dart';
+import 'package:hospital_managment/appointments/appointmentsbooking.dart';
+import 'package:hospital_managment/user/userdata.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
@@ -443,7 +443,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
             ),
             Container(
               height: widget.data['roles'] == 'patient'
-                  ? 525
+                  ? MediaQuery.of(context).size.height
                   : MediaQuery.of(context).size.height * 0.87,
               child: StreamBuilder(
                 stream: query!.snapshots(),

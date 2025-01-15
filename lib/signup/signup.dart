@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:first_app/components/components.dart';
+import 'package:hospital_managment/components/components.dart';
 
-import 'package:first_app/login/login_page.dart';
+import 'package:hospital_managment/login/login_page.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'package:flutter/material.dart';
@@ -32,11 +32,11 @@ class _SignupState extends State<Signup> {
   File? _image2;
   final picker = ImagePicker();
   ScrollController scrollController = ScrollController();
-bool isloading=false;
+  bool isloading = false;
   void signup() async {
-setState(() {
-  isloading=true;
-});
+    setState(() {
+      isloading = true;
+    });
     final isValid = formKey.currentState!.validate();
     if (!isValid) {
       return;
@@ -67,8 +67,8 @@ setState(() {
           'uid': credential.user!.uid
         });
         setState(() {
-  isloading=false;
-});
+          isloading = false;
+        });
 
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Succesfully Signed up')));
@@ -343,9 +343,12 @@ setState(() {
                   ],
                 ),
                 SizedBox(height: 10),
-               Mybutton(load: isloading, onPressed: (){
-                signup();
-               }, text: 'Sign Up')
+                Mybutton(
+                    load: isloading,
+                    onPressed: () {
+                      signup();
+                    },
+                    text: 'Sign Up')
               ],
             ),
           ),

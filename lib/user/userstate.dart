@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/dashboard/dashboard.dart';
-import 'package:first_app/login/login_page.dart';
+import 'package:hospital_managment/dashboard/dashboard.dart';
+import 'package:hospital_managment/login/login_page.dart';
 import 'package:flutter/material.dart';
 
 class UserState extends StatelessWidget {

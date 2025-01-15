@@ -1,4 +1,4 @@
-# first_app
+# hospital_managment
 
 A new Flutter project.
 

@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/components/components.dart';
-import 'package:first_app/login/login_page.dart';
-import 'package:first_app/profile/edit_profile.dart';
+import 'package:hospital_managment/components/components.dart';
+import 'package:hospital_managment/login/login_page.dart';
+import 'package:hospital_managment/profile/edit_profile.dart';
 import 'package:flutter/material.dart';
 
 class SettingsPage extends StatefulWidget {

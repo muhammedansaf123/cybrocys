@@ -450,9 +450,11 @@ class Customcontainer extends StatelessWidget {
 class Mybutton extends StatelessWidget {
   final bool load;
   final String text;
+  final Color color;
   final void Function()? onPressed;
   const Mybutton(
       {super.key,
+      this.color=Colors.deepPurple,
       required this.load,
       required this.onPressed,
       required this.text});
@@ -467,7 +469,7 @@ class Mybutton extends StatelessWidget {
           padding: const EdgeInsets.only(top: 20.0,left: 10,right: 10),
           child: ElevatedButton(
               style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(Colors.deepPurple)),
+                  backgroundColor: WidgetStatePropertyAll(color)),
               onPressed: onPressed,
               child: load
                   ? CircularProgressIndicator(

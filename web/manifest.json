@@ -1,6 +1,6 @@
 {
-    "name": "first_app",
-    "short_name": "first_app",
+    "name": "hospital_managment",
+    "short_name": "hospital_managment",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

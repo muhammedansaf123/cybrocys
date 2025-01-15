@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/appointments/appointmentsbooking.dart';
-import 'package:first_app/appointments/appointmentshow.dart';
-import 'package:first_app/components/components.dart';
-import 'package:first_app/dashboard/dashboard.dart';
-import 'package:first_app/user/userdata.dart';
+
 import 'package:flutter/material.dart';
+import 'package:hospital_managment/appointments/appointmentsbooking.dart';
+import 'package:hospital_managment/components/components.dart';
+import 'package:hospital_managment/dashboard/dashboard.dart';
+import 'package:intl/intl.dart';
 
 class SurgeryAdmitForms extends StatefulWidget {
   final String reason;
@@ -45,10 +45,12 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
 
   TextEditingController specialInstructionsController = TextEditingController();
   String uid = FirebaseAuth.instance.currentUser!.uid;
+  DateTime? _selectedDate;
 
   // Updated surgery method
 
   void surgery() async {
+    final date = DateFormat('dd-MM-yyyy').format(_selectedDate!);
     try {
       FirebaseFirestore.instance
           .collection('appointments')
@@ -60,7 +62,7 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
           .set({
         'id': widget.appointmentid,
         'typeofsurgery': typecontroller.text,
-        'date': datecontroller.text,
+        'date': date,
         'reason': widget.reason,
         'doctorid': uid,
         'status': 'Pending',
@@ -70,6 +72,7 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
         'room': roomController.text,
         'anesthesiaType': anesthesiaController.text,
         'preSurgeryInstructions': preSurgeryInstructionsController.text,
+        'payment': 'notpaid'
       });
       _clearFields();
       _navigateToHomepage();
@@ -80,8 +83,7 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
 
   // Updated admit method
   void admit() async {
-    final patientdata = await Userdata(uid: widget.patientid).getData();
-    print(patientdata['name']);
+    final date = DateFormat('dd-MM-yyyy').format(_selectedDate!);
     try {
       FirebaseFirestore.instance
           .collection('appointments')
@@ -100,8 +102,9 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
         'status': 'Pending',
         'ward': wardController.text,
         'durationOfStay': durationController.text,
-        'admissionDate': datecontroller.text,
+        'admissionDate': date,
         'specialInstructions': specialInstructionsController.text,
+        'payment': 'notpaid'
       });
       _clearFields();
       _navigateToHomepage();
@@ -135,7 +138,19 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
 
   @override
   void initState() {
+    if (mounted) {
+      setState(() {
+        _selectedDate = DateTime.now();
+        print(DateTime.now());
+
+        date = DateFormat("dd/MM/yyyy").format(DateTime.now());
+        print(date);
+        appointmentDate = DateFormat("dd-MM-yyyy").format(DateTime.now());
+        print(appointmentDate);
+      });
+    }
     // TODO: implement initState
+
     super.initState();
   }
 
@@ -201,9 +216,42 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
                 ),
               ],
               SizedBox(height: 20),
-              AppointmentTextfield(
-                controller: datecontroller,
-                hinttext: "Scheduled Date",
+              InkWell(
+                onTap: () async {
+                  final pickedDate = await showDatePicker(
+                    barrierDismissible: true,
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2101),
+                  );
+                  if (pickedDate != null) {
+                    setState(() {
+                      _selectedDate = pickedDate;
+                      appointmentDate =
+                          DateFormat('dd-MM-yyyy').format(_selectedDate!);
+                    });
+                  }
+                },
+                child: Container(
+                  height: 50,
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        DateFormat('dd-MM-yyyy').format(_selectedDate!),
+                        style: TextStyle(color: Colors.black87),
+                      ),
+                      Spacer(),
+                      Icon(Icons.calendar_today, color: Colors.grey),
+                    ],
+                  ),
+                ),
               ),
               SizedBox(height: 20),
               Mybutton(

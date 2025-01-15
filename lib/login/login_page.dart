@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:first_app/components/components.dart';
-import 'package:first_app/dashboard/dashboard.dart';
-import 'package:first_app/signup/signup.dart';
+import 'package:hospital_managment/components/components.dart';
+import 'package:hospital_managment/dashboard/dashboard.dart';
+import 'package:hospital_managment/signup/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
