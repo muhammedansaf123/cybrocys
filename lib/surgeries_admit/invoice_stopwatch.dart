@@ -271,7 +271,7 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
+                  color: Colors.green,
                 ),
               ),
               SizedBox(height: 8),
@@ -302,8 +302,57 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
   }
 
   void handlePaymentError(PaymentFailureResponse response) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Payement Error')));
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Lottie.asset(
+                'assets/failure.json',
+                width: 200,
+                height: 200,
+                fit: BoxFit.fill,
+                repeat: false,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Payment failure!',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Please Try Again...',
+                style: TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                 
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void handleExternalWallet(ExternalWalletResponse response) {}
@@ -446,8 +495,7 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
     );
     print(widget.invoiceNumber);
     await Printing.sharePdf(
-        bytes: await pdf.save(),
-        filename: '${widget.invoiceDate}.pdf');
+        bytes: await pdf.save(), filename: '${widget.invoiceDate}.pdf');
   }
 
   pw.Widget _buildHeaderpdf() {
@@ -557,7 +605,6 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
       ],
     );
   }
-  
 
   pw.Widget _buildFooterpdf() {
     return pw.Column(
@@ -577,11 +624,14 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          generateInvoicePdf(context);
-        },
-        child: Icon(Icons.download),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 60),
+        child: FloatingActionButton(
+          onPressed: () {
+            generateInvoicePdf(context);
+          },
+          child: Icon(Icons.download),
+        ),
       ),
       appBar: AppBar(
         automaticallyImplyLeading: false,

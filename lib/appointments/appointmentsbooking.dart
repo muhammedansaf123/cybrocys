@@ -120,34 +120,8 @@ class _AppointmenttileState extends State<Appointmenttile> {
     final appointmentid = Uuid().v4();
     if (_selectedDate!.isAfter(today) || _selectedDate!.day == today.day) {
       try {
-        String doctorName = widget.name.toLowerCase();
-        List<String> nameSubstrings = [];
-        for (int i = 1; i <= doctorName.length; i++) {
-          for (int j = 0; j <= doctorName.length - i; j++) {
-            nameSubstrings.add(doctorName.substring(j, j + i));
-          }
-        }
-
-        List<String> dateCombinations = [];
-
-        for (int i = 1; i <= appointmentDate!.length; i++) {
-          for (int j = 0; j <= appointmentDate!.length - i; j++) {
-            dateCombinations.add(appointmentDate!.substring(j, j + i));
-          }
-        }
-
-        List<String> reasoncombination = [];
-
-        for (int i = 1; i <= reasons.length; i++) {
-          for (int j = 0; j <= reasons.length - i; j++) {
-            reasoncombination.add(reasons.substring(j, j + i));
-          }
-        }
-        List<String> searchKeywords = [
-          ...nameSubstrings,
-          ...dateCombinations,
-          ...reasoncombination
-        ];
+       
+      
         FirebaseFirestore.instance
             .collection('appointments')
             .doc(appointmentid)
@@ -171,7 +145,7 @@ class _AppointmenttileState extends State<Appointmenttile> {
           'code': 'a',
           'note': "",
           'prescribed': 'null',
-          'searchkeywords': searchKeywords
+           
         });
         if (mounted) {
           setState(() {

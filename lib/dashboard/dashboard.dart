@@ -77,10 +77,7 @@ class _HomepageState extends State<Homepage> {
               {'name': data['name'], 'uid': id, 'imageurl': data['imageurl']});
         }
         if (data['roles'] == 'patient') {
-          await FirebaseFirestore.instance
-              .collection('patient')
-              .doc(id)
-              .set({
+          await FirebaseFirestore.instance.collection('patient').doc(id).set({
             'name': data['name'],
             'uid': id,
           });
@@ -348,7 +345,9 @@ class _HomepageState extends State<Homepage> {
                                       SizedBox(
                                         height: 10,
                                       ),
-                                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
                                         children: [
                                           SizedBox(
                                             width: 10,
@@ -366,7 +365,9 @@ class _HomepageState extends State<Homepage> {
                                               title: 'Blood Count',
                                             ),
                                           ),
-                                          SizedBox(width: 15,),
+                                          SizedBox(
+                                            width: 15,
+                                          ),
                                           Expanded(
                                             child: LabResultsTile(
                                               progresscolor: Colors.green,
@@ -389,7 +390,9 @@ class _HomepageState extends State<Homepage> {
                                       SizedBox(
                                         height: 10,
                                       ),
-                                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
                                         children: [
                                           SizedBox(
                                             width: 10,
@@ -407,7 +410,9 @@ class _HomepageState extends State<Homepage> {
                                               title: 'BP',
                                             ),
                                           ),
-                                         SizedBox(width: 15,),
+                                          SizedBox(
+                                            width: 15,
+                                          ),
                                           Expanded(
                                             child: LabResultsTile(
                                               progresscolor: Colors.green,
@@ -975,9 +980,11 @@ class _HomepageState extends State<Homepage> {
                                   color: Colors.grey[200],
                                   borderRadius: BorderRadius.circular(10)),
                               child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Row(
                                     children: [
+                                      Spacer(),
                                       Containertile(
                                           percentage: '10%',
                                           isdown: true,
@@ -987,9 +994,7 @@ class _HomepageState extends State<Homepage> {
                                           daylength: 'last 7 days',
                                           title: 'total patients',
                                           value: 2034),
-                                      SizedBox(
-                                        width: 20,
-                                      ),
+                                      Spacer(),
                                       Containertile(
                                           percentage: '80%',
                                           icons: Icons.local_hospital,
@@ -997,14 +1002,14 @@ class _HomepageState extends State<Homepage> {
                                               255, 119, 148, 145),
                                           daylength: 'last 2 weaks',
                                           title: 'Lab reports',
-                                          value: 50)
+                                          value: 50),
+                                      Spacer(),
                                     ],
                                   ),
-                                  SizedBox(
-                                    height: 20,
-                                  ),
+                                  Spacer(),
                                   Row(
                                     children: [
+                                      Spacer(),
                                       Containertile(
                                           percentage: '20%',
                                           isdown: true,
@@ -1015,9 +1020,7 @@ class _HomepageState extends State<Homepage> {
                                           daylength: 'last 7 days',
                                           title: 'Urgent',
                                           value: 37),
-                                      SizedBox(
-                                        width: 20,
-                                      ),
+                                      Spacer(),
                                       Containertile(
                                           percentage: '30%',
                                           icons: Icons.car_crash_sharp,
@@ -1025,7 +1028,8 @@ class _HomepageState extends State<Homepage> {
                                               255, 219, 210, 160),
                                           daylength: 'last 7 days',
                                           title: 'Surgeries',
-                                          value: 123)
+                                          value: 123),
+                                      Spacer(),
                                     ],
                                   )
                                 ],

@@ -528,6 +528,7 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
                                 }
 
                                 if (filteredsurgeries.isEmpty &&
+                                    _searchControllersurgery.text.isEmpty &&
                                     isFiltersurgeries == false) {
                                   print('second');
 
@@ -615,6 +616,7 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
                                 }
 
                                 if (filteredadmits.isEmpty &&
+                                    _searchControlleradmits.text.isEmpty &&
                                     isFilteradmits == false) {
                                   print('second');
 

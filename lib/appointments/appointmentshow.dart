@@ -32,31 +32,28 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
   String currentfilter = 'None';
   String? selectedname;
   Query? query;
-  TextEditingController searchController = TextEditingController();
+  List<Map<String, dynamic>> _filteredRecords = [];
+  List<Map<String, dynamic>> _allRecords = [];
+  DateTime? selectedDate = DateTime.now();
+  bool isFilter = false;
+  bool issearch = false;
+
+  DateTime? filterdate = DateTime.now();
+  String status = '';
+  TextEditingController _searchController = TextEditingController();
   final uid = FirebaseAuth.instance.currentUser!.uid;
   @override
   void initState() {
     fetchuserdata();
     if (widget.data['roles'] == 'patient') {
-      clearQuery();
+      initialQuery();
     } else {
       doctorQuery();
     }
     super.initState();
   }
 
-  void fetcclearquery(DateTime start, DateTime end) {
-    setState(() {
-      query = FirebaseFirestore.instance
-          .collection('appointments')
-          .where('date', isGreaterThanOrEqualTo: startDate)
-          .where('date', isLessThanOrEqualTo: endDate)
-          .where('patientid',
-              isEqualTo: FirebaseAuth.instance.currentUser!.uid);
-    });
-  }
-
-  void clearQuery() {
+  void initialQuery() {
     setState(() {
       query = FirebaseFirestore.instance
           .collection('appointments')
@@ -73,27 +70,95 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
     });
   }
 
+  void _filterRecordsSearch() {
+    final searchText = _searchController.text.toLowerCase();
+
+    print('isfilter:$isFilter');
+    
+
+    setState(() {
+      _filteredRecords = _allRecords.where((record) {
+        return record.values.any((value) {
+          final stringValue = value.toString().toLowerCase();
+          return stringValue.contains(searchText);
+        });
+      }).toList();
+    });
+  }
+
+  void _filterRecordsDaterange(DateTime startDate, DateTime endDate) {
+    isFilter = true;
+
+    if (_searchController.text.isNotEmpty) {
+      _filterRecordsSearch();
+      setState(() {
+        _filteredRecords = _filteredRecords.where((record) {
+          if (record.containsKey('date')) {
+            final Timestamp timestamp = record['date'];
+            final DateTime recordDate = timestamp.toDate();
+
+            return recordDate.isAfter(startDate) &&
+                recordDate.isBefore(endDate);
+          }
+          return false;
+        }).toList();
+      });
+    } else {
+      setState(() {
+        _filteredRecords = _allRecords.where((record) {
+          if (record.containsKey('date')) {
+            final Timestamp timestamp = record['date'];
+            final DateTime recordDate = timestamp.toDate();
+
+            return recordDate.isAfter(startDate) &&
+                recordDate.isBefore(endDate);
+          }
+          return false;
+        }).toList();
+      });
+    }
+  }
+
+  void _filterRecordsname(String name) {
+    String lowername = name.toLowerCase();
+    isFilter = true;
+
+    if (_searchController.text.isNotEmpty) {
+      _filterRecordsSearch();
+      setState(() {
+        issearch = true;
+        _filteredRecords = _filteredRecords.where((record) {
+          return record.values.any((value) {
+            final stringValue = value.toString().toLowerCase();
+            return stringValue.contains(lowername);
+          });
+        }).toList();
+      });
+    } else {
+      setState(() {
+        issearch = false;
+        print('working');
+        _filteredRecords = _allRecords.where((record) {
+          return record.values.any((value) {
+            final stringValue = value.toString().toLowerCase();
+            return stringValue.contains(lowername);
+          });
+        }).toList();
+      });
+    }
+  }
+
+  void clearfilter() {
+    setState(() {
+      issearch = false;
+      isFilter = false;
+      _filteredRecords = _allRecords;
+    });
+  }
+
+
   void fetchuserdata() async {
     final user = await Userdata(uid: uid).getData();
-    print(user['name']);
-  }
-
-  void searchQuery() {
-    setState(() {
-      query = FirebaseFirestore.instance
-          .collection('appointments')
-          .where('patientid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-          .where('searchkeywords', arrayContains: searchController.text);
-    });
-  }
-
-  void fectcQuery(String name) {
-    setState(() {
-      query = FirebaseFirestore.instance
-          .collection('appointments')
-          .where('patientid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-          .where('doctorsname', isEqualTo: selectedname);
-    });
   }
 
   void _onSelectionChanged(DateRangePickerSelectionChangedArgs args) {
@@ -102,8 +167,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
         startDate = args.value.startDate;
 
         endDate = args.value.endDate ?? args.value.startDate;
-        fetcclearquery(startDate, endDate);
-        print('${startDate}-${endDate}');
+        _filterRecordsDaterange(startDate, endDate);
       } else if (args.value is DateTime) {
         _selectedDate = args.value.toString();
       } else if (args.value is List<DateTime>) {
@@ -129,6 +193,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
           if (widget.data['roles'] == 'patient')
             IconButton(
                 onPressed: () {
+                  WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
                   showModalBottomSheet<void>(
                     context: context,
                     builder: (BuildContext context) {
@@ -195,7 +260,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
                                       Spacer(),
                                       ElevatedButton(
                                           onPressed: () {
-                                            clearQuery();
+                                            clearfilter();
                                           },
                                           child: Text("Clear Filter"))
                                     ],
@@ -281,13 +346,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
                                                     snapshot.data!.docs[index];
                                                 final name =
                                                     doctorsdata['name'];
-                                                // final uid = doctorsdata['uid'];
-                                                // final type = doctorsdata['type'];
-                                                // final url =
-                                                //     doctorsdata['imageurl'];
-                                                // final available =
-                                                //     doctorsdata['available'];
-                                                // final rating =
+
                                                 doctorsdata['rating'];
 
                                                 return Padding(
@@ -312,7 +371,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
                                                             setState(() {
                                                               selectedname =
                                                                   name;
-                                                              fectcQuery(
+                                                              _filterRecordsname(
                                                                   selectedname!);
                                                             });
                                                           },
@@ -378,124 +437,136 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
         iconTheme: IconThemeData(color: Colors.white),
         backgroundColor: Colors.deepPurple,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: searchController,
-                onChanged: (value) {
-                  if (value.length == 0) {
-                    clearQuery();
-                  } else {
-                    print(searchController.text);
-                    searchQuery();
-                  }
-                },
-                decoration: InputDecoration(
-                  suffixIcon: Icon(Icons.search),
-                  hintText: "Search...",
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(5),
-                      borderSide:
-                          BorderSide(color: Colors.deepPurple, width: 2)),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide:
-                          BorderSide(color: Colors.deepPurple, width: 3)),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 5,
-            ),
-            if (widget.data['roles'] == 'patient') ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: Container(
-                          height: 50,
-                          child: ElevatedButton(
-                              style: ButtonStyle(
-                                  backgroundColor: WidgetStatePropertyAll(
-                                      Colors.deepPurple)),
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => AppointmentsPage(
-                                            data: widget.data)));
-                              },
-                              child: Text(
-                                "book now",
-                                style: TextStyle(color: Colors.white),
-                              )),
-                        )),
-                  )
-                ],
-              ),
-            ],
-            SizedBox(
-              height: 5,
-            ),
-            Container(
-              height: widget.data['roles'] == 'patient'
-                  ? MediaQuery.of(context).size.height
-                  : MediaQuery.of(context).size.height * 0.87,
-              child: StreamBuilder(
-                stream: query!.snapshots(),
-                builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    // ignore: avoid_print
-                    print('Error fetching data: ${snapshot.error}');
-                    return const Center(child: Text('Error fetching data'));
-                  }
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                if (value.isEmpty) {
+                  setState(() {
+                    issearch = false;
+                  });
+                }
 
-                  if (snapshot.hasData && snapshot.data!.docs.isEmpty) {
-                    return const Center(
-                        child: Text('No Appointments found found'));
-                  }
-                  return SizedBox(
-                    child: ListView.builder(
-                        itemCount: snapshot.data!.docs.length,
-                        itemBuilder: (context, index) {
-                          final appointmentdata = snapshot.data!.docs[index];
-                          final appointmentid =
-                              appointmentdata['appointmentid'];
-                          return Padding(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 4), // Add vertical spacing here
-                              child: Appointmentshowtile(
-                                appointmentdata: appointmentdata,
-                                userdata: widget.data,
-                                ontap: () {},
-                                onPressed: () {
-                                  FirebaseFirestore.instance
-                                      .collection('appointments')
-                                      .doc(appointmentid)
-                                      .delete();
-                                },
-                              ));
-                        }),
-                  );
-                },
+                _filterRecordsSearch();
+              },
+              decoration: InputDecoration(
+                suffixIcon: Icon(Icons.search),
+                hintText: "Search...",
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide(color: Colors.deepPurple, width: 2)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.deepPurple, width: 3)),
               ),
+            ),
+          ),
+          SizedBox(
+            height: 5,
+          ),
+          if (widget.data['roles'] == 'patient') ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Container(
+                        height: 50,
+                        child: ElevatedButton(
+                            style: ButtonStyle(
+                                backgroundColor:
+                                    WidgetStatePropertyAll(Colors.deepPurple)),
+                            onPressed: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          AppointmentsPage(data: widget.data)));
+                            },
+                            child: Text(
+                              "book now",
+                              style: TextStyle(color: Colors.white),
+                            )),
+                      )),
+                )
+              ],
             ),
           ],
-        ),
+          SizedBox(
+            height: 5,
+          ),
+          StreamBuilder(
+            stream: query!.snapshots(),
+            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return const Center(child: Text('Error fetching data'));
+              }
+
+              if (snapshot.hasData) {
+                _allRecords = snapshot.data!.docs
+                    .map<Map<String, dynamic>>(
+                        (doc) => doc.data() as Map<String, dynamic>)
+                    .toList();
+              }
+
+              if (_filteredRecords.isEmpty &&
+                  isFilter == false &&
+                  _searchController.text.isEmpty) {
+                print('second');
+
+                _filteredRecords = _allRecords;
+              }
+              if (_filteredRecords.isEmpty) {
+                print('third');
+                _filteredRecords = _allRecords;
+                return Column(
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.3,
+                    ),
+                    Text('No records found'),
+                  ],
+                );
+              }
+
+              return Expanded(
+                child: ListView.builder(
+                    itemCount: _filteredRecords.length,
+                    itemBuilder: (context, index) {
+                      final appointmentdata = _filteredRecords[index];
+                      final appointmentid = appointmentdata['appointmentid'];
+                      return Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: 4), // Add vertical spacing here
+                          child: Appointmentshowtile(
+                            appointmentdata: appointmentdata,
+                            userdata: widget.data,
+                            ontap: () {},
+                            onPressed: () {
+                              FirebaseFirestore.instance
+                                  .collection('appointments')
+                                  .doc(appointmentid)
+                                  .delete();
+                            },
+                          ));
+                    }),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
 }
 
 class Appointmentshowtile extends StatefulWidget {
-  final QueryDocumentSnapshot<Object?> appointmentdata;
+  final Map appointmentdata;
 
   final void Function()? onPressed;
   final void Function()? ontap;
@@ -516,6 +587,7 @@ class _MedicalRecordTileState extends State<Appointmentshowtile> {
   @override
   Widget build(BuildContext context) {
     final date = widget.appointmentdata['date'].toDate();
+
     return Material(
       elevation: 4,
       borderRadius: BorderRadius.circular(15),
@@ -632,6 +704,19 @@ class _MedicalRecordTileState extends State<Appointmentshowtile> {
                                 fontWeight: FontWeight.bold,
                                 fontSize: 19),
                           ),
+                          widget.appointmentdata['prescribed'] == 'null'
+                              ? Text(
+                                  'Nothing selected',
+                                  style: TextStyle(
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.bold),
+                                )
+                              : Text(
+                                  widget.appointmentdata['prescribed'],
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                ),
                         ],
                       )
                     : widget.userdata['roles'] == 'patient'
@@ -917,6 +1002,7 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
