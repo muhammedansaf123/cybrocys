@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hospital_managment/appointments/appointment_pdf.dart';
 import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
 import 'package:hospital_managment/surgeries_admit/surgery_admit_forms.dart';
 import 'package:hospital_managment/components/components.dart';
@@ -27,17 +28,18 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
   String _dateCount = '';
   String _range = '';
   String _rangeCount = '';
-  DateTime startDate = DateTime.now();
+  DateTime startDate = DateTime.now().subtract(Duration(days: 300));
   DateTime endDate = DateTime.now().add(Duration(days: 300));
   String currentfilter = 'None';
   String? selectedname;
   Query? query;
   List<Map<String, dynamic>> _filteredRecords = [];
   List<Map<String, dynamic>> _allRecords = [];
-  DateTime? selectedDate = DateTime.now();
+
+  DateTime? selectedDate;
   bool isFilter = false;
   bool issearch = false;
-
+  bool isnamefilter = false;
   DateTime? filterdate = DateTime.now();
   String status = '';
   TextEditingController _searchController = TextEditingController();
@@ -46,116 +48,50 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
   void initState() {
     fetchuserdata();
     if (widget.data['roles'] == 'patient') {
-      initialQuery();
+      fetchAppointmentspatients();
     } else {
-      doctorQuery();
+      fetchAppointmentsdoctor();
     }
     super.initState();
   }
 
-  void initialQuery() {
+  Future<List<Map<String, dynamic>>> fetchAppointmentspatients() async {
+    print('patient');
+    QuerySnapshot<Map<String, dynamic>> querySnapshot = await FirebaseFirestore
+        .instance
+        .collection('appointments')
+        .where('patientid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+        .orderBy('code', descending: false)
+        .get();
+
+    List<Map<String, dynamic>> appointments =
+        querySnapshot.docs.map((doc) => doc.data()).toList();
+    print(appointments);
     setState(() {
-      query = FirebaseFirestore.instance
-          .collection('appointments')
-          .where('patientid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-          .orderBy('code', descending: false);
-    });
-  }
-
-  void doctorQuery() async {
-    setState(() {
-      query = FirebaseFirestore.instance
-          .collection('appointments')
-          .where('doctorid', isEqualTo: FirebaseAuth.instance.currentUser!.uid);
-    });
-  }
-
-  void _filterRecordsSearch() {
-    final searchText = _searchController.text.toLowerCase();
-
-    print('isfilter:$isFilter');
-    
-
-    setState(() {
-      _filteredRecords = _allRecords.where((record) {
-        return record.values.any((value) {
-          final stringValue = value.toString().toLowerCase();
-          return stringValue.contains(searchText);
-        });
-      }).toList();
-    });
-  }
-
-  void _filterRecordsDaterange(DateTime startDate, DateTime endDate) {
-    isFilter = true;
-
-    if (_searchController.text.isNotEmpty) {
-      _filterRecordsSearch();
-      setState(() {
-        _filteredRecords = _filteredRecords.where((record) {
-          if (record.containsKey('date')) {
-            final Timestamp timestamp = record['date'];
-            final DateTime recordDate = timestamp.toDate();
-
-            return recordDate.isAfter(startDate) &&
-                recordDate.isBefore(endDate);
-          }
-          return false;
-        }).toList();
-      });
-    } else {
-      setState(() {
-        _filteredRecords = _allRecords.where((record) {
-          if (record.containsKey('date')) {
-            final Timestamp timestamp = record['date'];
-            final DateTime recordDate = timestamp.toDate();
-
-            return recordDate.isAfter(startDate) &&
-                recordDate.isBefore(endDate);
-          }
-          return false;
-        }).toList();
-      });
-    }
-  }
-
-  void _filterRecordsname(String name) {
-    String lowername = name.toLowerCase();
-    isFilter = true;
-
-    if (_searchController.text.isNotEmpty) {
-      _filterRecordsSearch();
-      setState(() {
-        issearch = true;
-        _filteredRecords = _filteredRecords.where((record) {
-          return record.values.any((value) {
-            final stringValue = value.toString().toLowerCase();
-            return stringValue.contains(lowername);
-          });
-        }).toList();
-      });
-    } else {
-      setState(() {
-        issearch = false;
-        print('working');
-        _filteredRecords = _allRecords.where((record) {
-          return record.values.any((value) {
-            final stringValue = value.toString().toLowerCase();
-            return stringValue.contains(lowername);
-          });
-        }).toList();
-      });
-    }
-  }
-
-  void clearfilter() {
-    setState(() {
-      issearch = false;
-      isFilter = false;
+      _allRecords = appointments;
       _filteredRecords = _allRecords;
     });
+    return appointments;
   }
 
+  Future<List<Map<String, dynamic>>> fetchAppointmentsdoctor() async {
+    print('doctor');
+    QuerySnapshot<Map<String, dynamic>> querySnapshot = await FirebaseFirestore
+        .instance
+        .collection('appointments')
+        .where('doctorid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+        .orderBy('code', descending: false)
+        .get();
+
+    List<Map<String, dynamic>> appointments =
+        querySnapshot.docs.map((doc) => doc.data()).toList();
+
+    setState(() {
+      _allRecords = appointments;
+      _filteredRecords = _allRecords;
+    });
+    return appointments;
+  }
 
   void fetchuserdata() async {
     final user = await Userdata(uid: uid).getData();
@@ -167,7 +103,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
         startDate = args.value.startDate;
 
         endDate = args.value.endDate ?? args.value.startDate;
-        _filterRecordsDaterange(startDate, endDate);
+        _filter();
       } else if (args.value is DateTime) {
         _selectedDate = args.value.toString();
       } else if (args.value is List<DateTime>) {
@@ -175,6 +111,67 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
       } else {
         _rangeCount = args.value.length.toString();
       }
+    });
+  }
+
+  List<Map<String, dynamic>> filterTasks(
+      {required List<Map<String, dynamic>> allRecords,
+      required String query,
+      String? selectedName,
+      DateTime? startDate,
+      DateTime? endDate}) {
+    return allRecords.where((appointment) {
+      final matchesQuery = query.isEmpty ||
+          appointment.values.any((value) {
+            if (value is String) {
+              return value.toLowerCase().contains(query.toLowerCase());
+            }
+            return false;
+          });
+      print('matchesQuery: $matchesQuery');
+
+      final matchesSelectedName = selectedName == null ||
+          (appointment['doctorsname'] as String)
+              .toLowerCase()
+              .contains(selectedName.toLowerCase());
+      print('matchesSelectedName: $matchesSelectedName');
+
+      final matchesDateRange = (startDate == null && endDate == null) ||
+          (startDate != null &&
+              endDate != null &&
+              (appointment['date'] as Timestamp).toDate().isAfter(startDate) &&
+              (appointment['date'] as Timestamp).toDate().isBefore(endDate));
+      print('matchesDateRange: $matchesDateRange');
+
+      return matchesQuery && matchesSelectedName && matchesDateRange;
+    }).toList();
+  }
+
+  void _filter() {
+    setState(() {
+      _filteredRecords = filterTasks(
+          allRecords: _allRecords,
+          query: _searchController.text,
+          selectedName: selectedname,
+          startDate: startDate,
+          endDate: endDate);
+    });
+  }
+
+  void _clear() {
+    setState(() {
+      _filteredRecords = filterTasks(
+        allRecords: _allRecords,
+        query: _searchController.text,
+        selectedName: null,
+        startDate: DateTime.now().subtract(Duration(days: 300)),
+        endDate: DateTime.now().add(
+          Duration(days: 300),
+        ),
+      );
+
+      selectedDate = null;
+      selectedname = null;
     });
   }
 
@@ -260,7 +257,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
                                       Spacer(),
                                       ElevatedButton(
                                           onPressed: () {
-                                            clearfilter();
+                                            _clear();
                                           },
                                           child: Text("Clear Filter"))
                                     ],
@@ -371,8 +368,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
                                                             setState(() {
                                                               selectedname =
                                                                   name;
-                                                              _filterRecordsname(
-                                                                  selectedname!);
+                                                              _filter();
                                                             });
                                                           },
                                                           contentPadding:
@@ -444,13 +440,7 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
             child: TextField(
               controller: _searchController,
               onChanged: (value) {
-                if (value.isEmpty) {
-                  setState(() {
-                    issearch = false;
-                  });
-                }
-
-                _filterRecordsSearch();
+                _filter();
               },
               decoration: InputDecoration(
                 suffixIcon: Icon(Icons.search),
@@ -498,67 +488,28 @@ class _MedicalRecordsState extends State<Appointmentshowpage> {
           SizedBox(
             height: 5,
           ),
-          StreamBuilder(
-            stream: query!.snapshots(),
-            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return const Center(child: Text('Error fetching data'));
-              }
-
-              if (snapshot.hasData) {
-                _allRecords = snapshot.data!.docs
-                    .map<Map<String, dynamic>>(
-                        (doc) => doc.data() as Map<String, dynamic>)
-                    .toList();
-              }
-
-              if (_filteredRecords.isEmpty &&
-                  isFilter == false &&
-                  _searchController.text.isEmpty) {
-                print('second');
-
-                _filteredRecords = _allRecords;
-              }
-              if (_filteredRecords.isEmpty) {
-                print('third');
-                _filteredRecords = _allRecords;
-                return Column(
-                  children: [
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.3,
-                    ),
-                    Text('No records found'),
-                  ],
+          Expanded(
+            child: ListView.builder(
+              itemCount: _filteredRecords.length,
+              itemBuilder: (context, index) {
+                final appointmentData = _filteredRecords[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Appointmentshowtile(
+                    appointmentdata: appointmentData,
+                    userdata: widget.data,
+                    ontap: () {},
+                    onPressed: () {
+                      FirebaseFirestore.instance
+                          .collection('appointments')
+                          .doc(appointmentData['appointmentid'])
+                          .delete();
+                    },
+                  ),
                 );
-              }
-
-              return Expanded(
-                child: ListView.builder(
-                    itemCount: _filteredRecords.length,
-                    itemBuilder: (context, index) {
-                      final appointmentdata = _filteredRecords[index];
-                      final appointmentid = appointmentdata['appointmentid'];
-                      return Padding(
-                          padding: EdgeInsets.symmetric(
-                              vertical: 4), // Add vertical spacing here
-                          child: Appointmentshowtile(
-                            appointmentdata: appointmentdata,
-                            userdata: widget.data,
-                            ontap: () {},
-                            onPressed: () {
-                              FirebaseFirestore.instance
-                                  .collection('appointments')
-                                  .doc(appointmentid)
-                                  .delete();
-                            },
-                          ));
-                    }),
-              );
-            },
-          ),
+              },
+            ),
+          )
         ],
       ),
     );
@@ -915,7 +866,7 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         image: DecorationImage(
-                          image: FileImage(File(widget.url)),
+                          image: NetworkImage(widget.url),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -1152,155 +1103,3 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
   }
 }
 
-Future<void> generatePdf({
-  required Map userdata,
-  required double rating,
-  required String url,
-  required String age,
-  required String name,
-  required String type,
-  required String description,
-  required String gender,
-  required DateTime date,
-  required String appointmentid,
-  required bool approved,
-  required String status,
-  required String note,
-  required String reason,
-  BuildContext? context,
-}) async {
-  final pdf = pw.Document();
-
-  final image = pw.MemoryImage(
-    File(url).readAsBytesSync(),
-  );
-
-  pdf.addPage(
-    pw.Page(
-      build: (pw.Context context) => pw.Container(
-        padding: const pw.EdgeInsets.all(20),
-        decoration: pw.BoxDecoration(
-          borderRadius: pw.BorderRadius.circular(20),
-          boxShadow: [
-            pw.BoxShadow(
-              spreadRadius: 3,
-              blurRadius: 10,
-            ),
-          ],
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Row(
-              children: [
-                pw.Text(
-                  "Appointment Details",
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-                pw.Spacer(),
-              ],
-            ),
-            pw.SizedBox(height: 20),
-            if (userdata['roles'] == 'patient')
-              pw.Row(
-                children: [
-                  pw.Container(
-                    width: 70,
-                    height: 70,
-                    decoration: pw.BoxDecoration(
-                      shape: pw.BoxShape.circle,
-                      image: pw.DecorationImage(
-                          image: image, fit: pw.BoxFit.cover),
-                    ),
-                  ),
-                  pw.SizedBox(width: 15),
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        name,
-                        style: pw.TextStyle(
-                          fontSize: 18,
-                        ),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        type,
-                        style: pw.TextStyle(
-                          fontSize: 16,
-                        ),
-                      ),
-                      pw.SizedBox(height: 5),
-                      pw.Text(
-                        status != "null" ? status : "Not Approved",
-                        style: pw.TextStyle(
-                          color: status == "Approved"
-                              ? PdfColor(0, 1, 0)
-                              : PdfColor(1, 0, 0),
-                          fontWeight: pw.FontWeight.bold,
-                          fontSize: 17,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Spacer(),
-                  pw.Text(
-                    "$rating ★",
-                    style: pw.TextStyle(
-                      color: PdfColor(1, 1, 0),
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              ),
-            pw.SizedBox(height: 30),
-            pw.Text(
-              "Details",
-              style: pw.TextStyle(
-                fontSize: 20,
-              ),
-            ),
-            pw.SizedBox(height: 15),
-            detailRow("Full Name", name),
-            detailRow("Age", age),
-            detailRow("Gender", gender),
-            detailRow("Purpose of Visit", reason),
-            detailRow("Date", "${date.day}-${date.month}-${date.year}"),
-            pw.SizedBox(height: 10),
-            pw.Text(
-              "Describe Condition:",
-              style: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            pw.Text(
-              description,
-              style: pw.TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-  await Printing.sharePdf(bytes: await pdf.save(), filename: 'my-document.pdf');
-}
-
-pw.Widget detailRow(String label, String value) {
-  return pw.Row(
-    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-    children: [
-      pw.Text(
-        label,
-        style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-      ),
-      pw.Text(
-        value,
-        style: pw.TextStyle(fontSize: 16),
-      ),
-    ],
-  );
-}

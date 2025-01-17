@@ -51,9 +51,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         borderRadius: BorderRadius.circular(50),
                         border: Border.all(color: Colors.deepPurple, width: 2)),
                     child: ClipOval(
-                      child: Image.file(
+                      child: Image.network(
+                        data!['imageurl'],
                         fit: BoxFit.cover,
-                        File(data!['imageurl']),
                       ),
                     ),
                   ),
@@ -87,34 +87,33 @@ class _ProfilePageState extends State<ProfilePage> {
                         icons: Icons.person,
                         title: 'Profile'),
                   ),
-                  if (data['roles'] != 'manager') ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 10),
-                      child: Customrow(
-                          onTap: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => SettingsPage()));
-                          },
-                          icons: Icons.settings,
-                          title: 'Settings'),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 10),
-                      child: Customrow(
-                          onTap: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => HospitalDetails()));
-                          },
-                          icons: Icons.health_and_safety,
-                          title: 'Hospital Details'),
-                    ),
-                  ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
+                    child: Customrow(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => SettingsPage()));
+                        },
+                        icons: Icons.settings,
+                        title: 'Settings'),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
+                    child: Customrow(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => HospitalDetails()),
+                          );
+                        },
+                        icons: Icons.health_and_safety,
+                        title: 'Hospital Details'),
+                  ),
                 ],
               ),
             );

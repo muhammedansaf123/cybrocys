@@ -2,6 +2,7 @@ import 'package:hospital_managment/medical_records/medicalrecords.dart';
 import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
 import 'package:hospital_managment/components/components.dart';
 import 'package:flutter/material.dart';
+import 'package:hospital_managment/tester/tester.dart';
 
 class Drawerwidget extends StatelessWidget {
   final void Function()? onTap;
@@ -17,13 +18,16 @@ class Drawerwidget extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Container(padding: EdgeInsets.all(30),
+                  child: Container(
+                    padding: EdgeInsets.all(30),
                     height: 100,
                     color: Colors.deepPurple,
                     child: Text(
                       "Menu",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 25,color: Colors.white),
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 25,
+                          color: Colors.white),
                     ),
                   ),
                 )
@@ -49,10 +53,8 @@ class Drawerwidget extends StatelessWidget {
                 icons: Icons.local_hospital_outlined,
                 title: 'Surgeries and admits',
                 onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => SurgeryAdmit()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => SurgeryAdmit()));
                 }),
             Customrow(
                 icons: Icons.apartment,
@@ -61,7 +63,7 @@ class Drawerwidget extends StatelessWidget {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => Medicalrecords()));
+                          builder: (context) => TaskSearchFilter()));
                 })
           ],
         ),

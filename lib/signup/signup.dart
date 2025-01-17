@@ -1,10 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:hospital_managment/components/components.dart';
-
+import 'package:http/http.dart' as http;
 import 'package:hospital_managment/login/login_page.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -33,6 +34,25 @@ class _SignupState extends State<Signup> {
   final picker = ImagePicker();
   ScrollController scrollController = ScrollController();
   bool isloading = false;
+
+  Future<void> imageUplod() async {
+    final url = Uri.parse('https://api.cloudinary.com/v1_1/dqskhange/upload');
+    final request = http.MultipartRequest('POST', url)
+      ..fields['upload_preset'] = 'hospital_managment'
+      ..files.add(await http.MultipartFile.fromPath('file', imageurl!));
+    final response = await request.send();
+    if (response.statusCode == 200) {
+      final responsedata = await response.stream.toBytes();
+      final responseString = String.fromCharCodes(responsedata);
+      final jsonMap = jsonDecode(responseString);
+      setState(() {
+        final url = jsonMap['url'];
+        imageurl = url;
+        print(imageurl);
+      });
+    }
+  }
+
   void signup() async {
     setState(() {
       isloading = true;
@@ -47,12 +67,8 @@ class _SignupState extends State<Signup> {
           email: emailController.text,
           password: passwordController.text,
         );
-        final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-        final imagedata = prefs.getString('currentimage');
-        prefs.setString(credential.user!.uid, imagedata!);
-        print('image resaved');
-
+        FirebaseAuth.instance.signOut();
+        await imageUplod();
         await FirebaseFirestore.instance
             .collection('users')
             .doc(credential.user!.uid)
@@ -61,23 +77,24 @@ class _SignupState extends State<Signup> {
           'email': emailController.text,
           'phone': phonenumberController.text,
           'address': addressController.text,
-          'imageurl': imagedata,
+          'imageurl': imageurl,
           'roles': "",
           'authentication': false,
           'uid': credential.user!.uid
         });
+
         setState(() {
           isloading = false;
         });
 
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Succesfully Signed up')));
+            .showSnackBar(SnackBar(content: Text('Successfully Signed up')));
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => LoginDemo()),
         );
       } catch (e) {
-        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$e')));
       }
@@ -86,42 +103,22 @@ class _SignupState extends State<Signup> {
 
   Future getImageFromGallery() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
     setState(() {
       if (pickedFile != null) {
         _image = File(pickedFile.path);
-        storeimage(pickedFile!);
+        imageurl = pickedFile.path;
       }
-    });
-  }
-
-  void loadimage() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    final imagedata = prefs.getString('currentimage');
-    setState(() {
-      _image2 = File(imagedata!);
     });
   }
 
   Future getImageFromCamera() async {
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
-
     setState(() {
       if (pickedFile != null) {
         _image = File(pickedFile.path);
-        storeimage(pickedFile!);
+        imageurl = pickedFile.path;
       }
     });
-  }
-
-  Future<String> storeimage(XFile pickedFile) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    prefs.setString('currentimage', pickedFile.path);
-    print('imagestored');
-
-    return pickedFile.path;
   }
 
   void printdata() async {

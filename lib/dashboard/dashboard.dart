@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hospital_managment/login/login_page.dart';
 import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
 import 'package:hospital_managment/components/components.dart';
 import 'package:hospital_managment/components/const.dart';
@@ -12,6 +13,7 @@ import 'package:hospital_managment/profile/hospital/hospital_details.dart';
 import 'package:hospital_managment/profile/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:printing/printing.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class Homepage extends StatefulWidget {
@@ -28,14 +30,18 @@ class _HomepageState extends State<Homepage> {
   bool? authsettings;
   late final LocalAuthentication localAuth;
   final GlobalKey<ScaffoldState> _key = GlobalKey();
-
+  String? uid;
   Map<String, dynamic>? userdata;
   @override
   void initState() {
     super.initState();
 
     final id = FirebaseAuth.instance.currentUser!.uid;
-
+    if (mounted) {
+      setState(() {
+        uid = id;
+      });
+    }
     FirebaseFirestore.instance
         .collection('users')
         .doc(id)
@@ -113,15 +119,12 @@ class _HomepageState extends State<Homepage> {
   @override
   void dispose() {
     // TODO: implement dispose
+    uid = "";
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-    final uid = user!.uid;
-
     late Stream<DocumentSnapshot<Map<String, dynamic>>>? personnalData =
         FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
 
@@ -130,6 +133,7 @@ class _HomepageState extends State<Homepage> {
         builder: (context, userssnapshot) {
           if (userssnapshot.hasData) {
             final data = userssnapshot.data;
+
             print(data);
             print(authsettings);
             if (data!['roles'] == 'patient' && biometrics == true) {
@@ -172,10 +176,9 @@ class _HomepageState extends State<Homepage> {
                               shape: BoxShape.circle,
                             ),
                             child: CircleAvatar(
-                              backgroundImage: FileImage(File(
-                                data!['imageurl'],
-                              )),
-                            ),
+                                backgroundImage: NetworkImage(
+                              data['imageurl'],
+                            )),
                           ),
                         ),
                       ],
@@ -768,10 +771,9 @@ class _HomepageState extends State<Homepage> {
                               shape: BoxShape.circle,
                             ),
                             child: CircleAvatar(
-                              backgroundImage: FileImage(File(
-                                data!['imageurl'],
-                              )),
-                            ),
+                                backgroundImage: NetworkImage(
+                              data['imageurl'],
+                            )),
                           ),
                         ),
                       ],
@@ -1076,9 +1078,9 @@ class _HomepageState extends State<Homepage> {
                               shape: BoxShape.circle,
                             ),
                             child: CircleAvatar(
-                              backgroundImage:
-                                  FileImage(File(data!['imageurl'])),
-                            ),
+                                backgroundImage: NetworkImage(
+                              data['imageurl'],
+                            )),
                           ),
                         ),
                       ),
@@ -1331,17 +1333,8 @@ class _HomepageState extends State<Homepage> {
                 ),
               );
             }
-          } else {
-            return Scaffold(
-              body: Center(
-                child: Container(
-                  width: 30,
-                  height: 30,
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-            );
           }
+          return Scaffold(body: Center(child: CircularProgressIndicator(),),);
         });
   }
 }

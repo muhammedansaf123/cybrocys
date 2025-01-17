@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -21,55 +22,11 @@ class _MedicalrecordsState extends State<Medicalrecords> {
   bool isFilter = false;
   DateTime? filterdate = DateTime.now();
   String status = '';
-  void _filterRecords() {
-    isFilter = true;
-    final searchText = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredRecords = _allRecords.where((record) {
-        return record.values.any((value) {
-          final stringValue = value.toString().toLowerCase();
-          return stringValue.contains(searchText);
-        });
-      }).toList();
-    });
-  }
 
-  void clearfilter() {
-    setState(() {
-      _filteredRecords = _allRecords;
-    });
-  }
-
-  void consultationfilter(String date) {
-    setState(() {
-      isFilter = true;
-      _filteredRecords = _allRecords.where((record) {
-        return record.values.any((value) {
-          final stringValue = value.toString().toLowerCase();
-          return stringValue.contains(date);
-        });
-      }).toList();
-     
-    });
-  }
-
-  void statusFilter(String status) {
-    print(status);
-    setState(() {
-      isFilter = true;
-      _filteredRecords = _allRecords.where((record) {
-        return record.values.any((value) {
-          final stringValue = value.toString().toLowerCase();
-          return stringValue.contains(status);
-        });
-      }).toList();
-      
-    });
-  }
-
-  void consultationquery() {}
   @override
   void initState() {
+    fetchmedicalRecorddata();
+    // TODO: implement initState
     super.initState();
   }
 
@@ -77,6 +34,67 @@ class _MedicalrecordsState extends State<Medicalrecords> {
   void dispose() {
     // TODO: implement dispose
     super.dispose();
+  }
+
+  Future<List<Map<String, dynamic>>> fetchmedicalRecorddata() async {
+    QuerySnapshot<Map<String, dynamic>> querySnapshot =
+        await FirebaseFirestore.instance.collection('medicalrecords').get();
+
+    List<Map<String, dynamic>> appointments =
+        querySnapshot.docs.map((doc) => doc.data()).toList();
+
+    setState(() {
+      _allRecords = appointments;
+      _filteredRecords = _allRecords;
+      print(_filteredRecords);
+    });
+    return appointments;
+  }
+
+ List<Map<String, dynamic>> filterTasks({
+  required List<Map<String, dynamic>> allRecords,
+  required String query,
+  String? selectedName,
+  DateTime? startDate,
+  DateTime? endDate,
+}) {
+  return allRecords.where((appointment) {
+    final matchesQuery = query.isEmpty || containsQuery(appointment, query.toLowerCase());
+
+    // Uncomment and update these lines if you want to reintroduce filtering by name and date range
+    // final matchesSelectedName = selectedName == null ||
+    //     (appointment['name'] as String).toLowerCase().contains(selectedName.toLowerCase());
+
+    // final matchesDateRange = (startDate == null && endDate == null) ||
+    //     (startDate != null && endDate != null &&
+    //      (appointment['date'] as Timestamp).toDate().isAfter(startDate) &&
+    //      (appointment['date'] as Timestamp).toDate().isBefore(endDate));
+
+    return matchesQuery; // && matchesSelectedName && matchesDateRange;
+  }).toList();
+}
+
+bool containsQuery(dynamic data, String query) {
+  if (data is String) {
+    return data.toLowerCase().contains(query);
+  } else if (data is Map) {
+    return data.values.any((value) => containsQuery(value, query));
+  } else if (data is List) {
+    return data.any((element) => containsQuery(element, query));
+  }
+  return false;
+}
+
+
+  void _filter() {
+    setState(() {
+      _filteredRecords = filterTasks(
+          allRecords: _allRecords,
+          query: _searchController.text,
+          selectedName: null,
+          startDate: null,
+          endDate: null);
+    });
   }
 
   @override
@@ -160,9 +178,7 @@ class _MedicalrecordsState extends State<Medicalrecords> {
                                       Spacer(),
                                       ElevatedButton(
                                           onPressed: () {
-                                            setState(() {
-                                              clearfilter();
-                                            });
+                                            setState(() {});
                                             print(_filteredRecords);
                                           },
                                           child: Text("Clear Filter"))
@@ -213,10 +229,6 @@ class _MedicalrecordsState extends State<Medicalrecords> {
                                               final appointmentDate =
                                                   DateFormat('dd-MM-yyyy')
                                                       .format(selectedDate!);
-                                              consultationfilter(
-                                                  appointmentDate);
-
-                                              //print('selected:$selected');
                                             },
                                             calendarFormat:
                                                 CalendarFormat.month,
@@ -243,9 +255,7 @@ class _MedicalrecordsState extends State<Medicalrecords> {
                                         children: [
                                           Card(
                                             child: ListTile(
-                                              onTap: () {
-                                                statusFilter('recovered');
-                                              },
+                                              onTap: () {},
                                               title: Text("Recovered"),
                                             ),
                                           ),
@@ -254,9 +264,7 @@ class _MedicalrecordsState extends State<Medicalrecords> {
                                           ),
                                           Card(
                                             child: ListTile(
-                                              onTap: () {
-                                                statusFilter('under treatment');
-                                              },
+                                              onTap: () {},
                                               title: Text('Under Treatment'),
                                             ),
                                           )
@@ -280,9 +288,7 @@ class _MedicalrecordsState extends State<Medicalrecords> {
                                         children: [
                                           Card(
                                             child: ListTile(
-                                              onTap: () {
-                                                statusFilter('dr. jane doe');
-                                              },
+                                              onTap: () {},
                                               title: Text("DR. Jane Doe"),
                                             ),
                                           ),
@@ -291,9 +297,7 @@ class _MedicalrecordsState extends State<Medicalrecords> {
                                           ),
                                           Card(
                                             child: ListTile(
-                                              onTap: () {
-                                                statusFilter('dr. john');
-                                              },
+                                              onTap: () {},
                                               title: Text('DR. John'),
                                             ),
                                           )
@@ -320,7 +324,7 @@ class _MedicalrecordsState extends State<Medicalrecords> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               onChanged: (value) {
-                _filterRecords();
+                _filter();
               },
               controller: _searchController,
               decoration: InputDecoration(
@@ -336,102 +340,68 @@ class _MedicalrecordsState extends State<Medicalrecords> {
             ),
           ),
           Expanded(
-            child: StreamBuilder(
-              stream: FirebaseFirestore.instance
-                  .collection('medicalrecords')
-                  .snapshots(),
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return const Center(child: Text('Error fetching data'));
-                }
+              child: ListView.builder(
+            itemCount: _filteredRecords.length,
+            itemBuilder: (context, index) {
+              final record = _filteredRecords[index];
 
-                if (snapshot.hasData) {
-                  _allRecords = snapshot.data!.docs
-                      .map<Map<String, dynamic>>(
-                          (doc) => doc.data() as Map<String, dynamic>)
-                      .toList();
-                }
+              final name = record['name'];
+              final lastConsultationDate =
+                  record['consultation']['lastConsultationDate'];
+              final nextConsultationDate =
+                  record['consultation']['nextConsultationDate'];
+              final history = record['history'].join(", ");
 
-                if (_filteredRecords.isEmpty && isFilter == false) {
-                  print('second');
-
-                  _filteredRecords = _allRecords;
-                }
-                if (_filteredRecords.isEmpty && filterdate != null) {
-                  print('third');
-                  _filteredRecords = _allRecords;
-                  return const Center(child: Text('No records found'));
-                }
-
-                return ListView.builder(
-                  itemCount: _filteredRecords.length,
-                  itemBuilder: (context, index) {
-                    final record = _filteredRecords[index];
-
-                    final name = record['name'];
-                    final lastConsultationDate =
-                        record['consultation']['lastConsultationDate'];
-                    final nextConsultationDate =
-                        record['consultation']['nextConsultationDate'];
-                    final history = record['history'].join(", ");
-
-                    return Padding(
-                      padding: EdgeInsets.symmetric(vertical: 4),
-                      child: Card(
-                        color: const Color.fromARGB(136, 79, 34, 153),
-                        margin: const EdgeInsets.all(8.0),
-                        child: ListTile(
-                          title: Text(
-                            name,
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: Card(
+                  color: const Color.fromARGB(136, 79, 34, 153),
+                  margin: const EdgeInsets.all(8.0),
+                  child: ListTile(
+                    title: Text(
+                      name,
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'last Consultation: $lastConsultationDate\nnext Consultation: $nextConsultationDate\nReason: $history',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailScreen(
+                            id: record['patientId'],
+                            name: record['name'],
+                            lastConsultationDate: record['consultation']
+                                ['lastConsultationDate'],
+                            history: record['history'].join(", "),
+                            age: record['age'],
+                            status: record['status'],
+                            nextConsultationDate: record['consultation']
+                                ['nextConsultationDate'],
+                            doctorsName: record['consultation']['doctor']
+                                ['name'],
+                            specialization: record['consultation']['doctor']
+                                ['specialization'],
+                            presc1: record['consultation']['doctor']
+                                ['prescription'][0],
+                            presc2: record['consultation']['doctor']
+                                ['prescription'][1],
+                            labResults: record['labResults'],
+                            allergies: record['allergies'][0],
+                            contactInfo: record['contactInfo']['phone'],
+                            notes: record['notes'],
                           ),
-                          subtitle: Text(
-                            'last Consultation: $lastConsultationDate\nnext Consultation: $nextConsultationDate\nReason: $history',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => DetailScreen(
-                                  id: record['patientId'],
-                                  name: record['name'],
-                                  lastConsultationDate: record['consultation']
-                                      ['lastConsultationDate'],
-                                  history: record['history'].join(", "),
-                                  age: record['age'],
-                                  status: record['status'],
-                                  nextConsultationDate: record['consultation']
-                                      ['nextConsultationDate'],
-                                  doctorsName: record['consultation']['doctor']
-                                      ['name'],
-                                  specialization: record['consultation']
-                                      ['doctor']['specialization'],
-                                  presc1: record['consultation']['doctor']
-                                      ['prescription'][0],
-                                  presc2: record['consultation']['doctor']
-                                      ['prescription'][1],
-                                  labResults: record['labResults'],
-                                  allergies: record['allergies'][0],
-                                  contactInfo: record['contactInfo']['phone'],
-                                  notes: record['notes'],
-                                ),
-                              ),
-                            );
-                          },
                         ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          )),
         ],
       ),
       floatingActionButton: FloatingActionButton(

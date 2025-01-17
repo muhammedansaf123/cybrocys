@@ -1,11 +1,14 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:hospital_managment/components/components.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -30,6 +33,7 @@ String? imageurl;
 File? _image;
 File? _image2;
 final picker = ImagePicker();
+bool _isloading = false;
 
 class _EditProfileState extends State<EditProfile> {
   @override
@@ -38,78 +42,63 @@ class _EditProfileState extends State<EditProfile> {
     final User? user = auth.currentUser;
     if (mounted) {
       setState(() {
+        _image = null;
         userid = user!.uid;
       });
-      assignImage();
     }
     super.initState();
   }
 
   CollectionReference users = FirebaseFirestore.instance.collection('users');
 
-  Future getImageFromGallery() async {
+  Future<void> getImageFromGallery() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    final SharedPreferences ansaf = await SharedPreferences.getInstance();
-    setState(() {
-      if (pickedFile != null) {
+
+    if (pickedFile != null) {
+      setState(() {
         _image = File(pickedFile.path);
         imageurl = pickedFile.path;
-        storeImage(pickedFile);
+      });
+    }
+  }
+
+  Future<void> imageUpload() async {
+    try {
+      final url = Uri.parse('https://api.cloudinary.com/v1_1/dqskhange/upload');
+      final request = http.MultipartRequest('POST', url)
+        ..fields['upload_preset'] = 'hospital_managment'
+        ..files.add(await http.MultipartFile.fromPath('file', imageurl!));
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.toBytes();
+        final responseString = String.fromCharCodes(responseData);
+        final jsonMap = jsonDecode(responseString);
+
+        setState(() {
+          imageurl = jsonMap['url'];
+        });
       } else {
-        imageurl = ansaf.getString(FirebaseAuth.instance.currentUser!.uid);
+        print('Failed to upload image. Status code: ${response.statusCode}');
       }
-    });
+    } catch (e) {
+      print('Error uploading image: $e');
+    }
   }
 
-  void assignImage() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    setState(() {
-      imageurl = prefs.getString(FirebaseAuth.instance.currentUser!.uid);
-    });
-  }
-
-  void loadimage() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    final imagedata = prefs.getString('currentimage');
-    setState(() {
-      _image2 = File(imagedata!);
-    });
-  }
-
-  Future getImageFromCamera() async {
+  Future<void> getImageFromCamera() async {
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
 
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      if (pickedFile != null) {
+    if (pickedFile != null) {
+      setState(() {
         _image = File(pickedFile.path);
         imageurl = pickedFile.path;
-        storeImage(pickedFile!);
-      } else {
-        imageurl = prefs.getString(FirebaseAuth.instance.currentUser!.uid);
-      }
-    });
+      });
+    }
   }
 
-  Future<String> storeImage(XFile pickedFile) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    prefs.setString(userid, pickedFile.path);
-    print('imagestored');
-
-    return pickedFile.path;
-  }
-
-  void printdata() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    prefs.getString('image');
-    print('image:${prefs.getString('image')}');
-  }
-
-  Future showOptions() async {
+  Future<void> showOptions() async {
     showCupertinoModalPopup(
       context: context,
       builder: (context) => CupertinoActionSheet(
@@ -118,7 +107,6 @@ class _EditProfileState extends State<EditProfile> {
             child: Text('Photo Gallery'),
             onPressed: () {
               Navigator.of(context).pop();
-
               getImageFromGallery();
             },
           ),
@@ -126,7 +114,6 @@ class _EditProfileState extends State<EditProfile> {
             child: Text('Camera'),
             onPressed: () {
               Navigator.of(context).pop();
-
               getImageFromCamera();
             },
           ),
@@ -135,24 +122,38 @@ class _EditProfileState extends State<EditProfile> {
     );
   }
 
-  void updateUser() {
-    FirebaseFirestore.instance.collection('users').doc(userid).update({
-      'name': fullname.text,
-      'phone': phonenumber.text,
-      'address': addresscontroller.text,
-      'imageurl': imageurl,
-      'email': emailcontroller.text
+  void updateUser() async {
+    setState(() {
+      _isloading = true;
     });
+    try {
+      await imageUpload();
+
+      if (imageurl != null) {
+        FirebaseFirestore.instance.collection('users').doc(userid).update({
+          'name': fullname.text,
+          'phone': phonenumber.text,
+          'address': addresscontroller.text,
+          'imageurl': imageurl,
+          'email': emailcontroller.text,
+        });
+      }
+      setState(() {
+        _isloading = true;
+      });
+    } catch (e) {
+    } finally {
+      setState(() {
+        _isloading = false;
+        isedit = false;
+      });
+    }
   }
 
-  Future<String> geturl(String uid) async {
+  Future<String> getUrl(String uid) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    if (imageurl == null) {
-      return prefs.getString(uid)!;
-    } else {
-      return imageurl!;
-    }
+    return imageurl ?? prefs.getString(uid)!;
   }
 
   @override
@@ -180,7 +181,7 @@ class _EditProfileState extends State<EditProfile> {
         ],
         leading: IconButton(
             onPressed: () {
-               fullname.clear();
+              fullname.clear();
               phonenumber.clear();
               addresscontroller.clear();
               emailcontroller.clear();
@@ -220,9 +221,9 @@ class _EditProfileState extends State<EditProfile> {
                               Border.all(color: Colors.deepPurple, width: 2)),
                       child: ClipOval(
                         child: _image == null
-                            ? Image.file(
+                            ? Image.network(
+                                data['imageurl'],
                                 fit: BoxFit.cover,
-                                File(data['imageurl']),
                               )
                             : Image.file(fit: BoxFit.cover, _image!),
                       ),
@@ -269,7 +270,8 @@ class _EditProfileState extends State<EditProfile> {
                               height: 15,
                             ),
                             isedit
-                                ? Edittile(onTap: (){},
+                                ? Edittile(
+                                    onTap: () {},
                                     controller: fullname,
                                     title: 'Full Name',
                                     autofocus: true,
@@ -282,7 +284,8 @@ class _EditProfileState extends State<EditProfile> {
                               height: 15,
                             ),
                             isedit
-                                ? Edittile(onTap: (){},
+                                ? Edittile(
+                                    onTap: () {},
                                     controller: phonenumber,
                                     title: 'Phone Number',
                                     autofocus: false,
@@ -295,7 +298,8 @@ class _EditProfileState extends State<EditProfile> {
                               height: 15,
                             ),
                             isedit
-                                ? Edittile(onTap: (){},
+                                ? Edittile(
+                                    onTap: () {},
                                     controller: addresscontroller,
                                     title: 'Address',
                                     autofocus: false,
@@ -308,7 +312,8 @@ class _EditProfileState extends State<EditProfile> {
                               height: 15,
                             ),
                             isedit
-                                ? Edittile(onTap: (){},
+                                ? Edittile(
+                                    onTap: () {},
                                     controller: emailcontroller,
                                     title: 'Email',
                                     autofocus: false,
@@ -321,36 +326,16 @@ class _EditProfileState extends State<EditProfile> {
                               height: 20,
                             ),
                             isedit
-                                ? SizedBox(
-                                    height: 65,
-                                    width: 360,
-                                    child: Container(
-                                      child: Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 20.0),
-                                        child: ElevatedButton(
-                                          style: ButtonStyle(
-                                              backgroundColor:
-                                                  WidgetStatePropertyAll(
-                                                      Colors.deepPurple)),
-                                          child: Text(
-                                            'Save',
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 20),
-                                          ),
-                                          onPressed: () {
-                                            updateUser();
-
-                                            setState(() {
-                                              isedit = false;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  )
+                                ? Mybutton(
+                                    load: _isloading,
+                                    onPressed: () {
+                                      updateUser();
+                                    },
+                                    text: "Save")
                                 : SizedBox(),
+                            SizedBox(
+                              height: 50,
+                            )
                           ],
                         ),
                       ),
@@ -419,16 +404,16 @@ class Edittile extends StatelessWidget {
   final bool isIcon;
   final IconData icn;
   final bool istitle;
- final void Function()? onTap;
+  final void Function()? onTap;
   const Edittile(
       {super.key,
-       this.icn=Icons.abc,
-       this.istitle=true,
-       this.isIcon=false,
-        required this.onTap,
+      this.icn = Icons.abc,
+      this.istitle = true,
+      this.isIcon = false,
+      required this.onTap,
       required this.controller,
       required this.title,
-      this.hintText="",
+      this.hintText = "",
       required this.autofocus});
 
   @override
@@ -436,7 +421,7 @@ class Edittile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-       istitle? Text(title):SizedBox(),
+        istitle ? Text(title) : SizedBox(),
         SizedBox(
           height: 15,
         ),
@@ -444,9 +429,13 @@ class Edittile extends StatelessWidget {
           showCursor: true,
           autofocus: autofocus,
           controller: controller,
-          
           decoration: InputDecoration(
-            suffixIcon:isIcon? GestureDetector(onTap: onTap,child: Icon(icn),):SizedBox(),
+            suffixIcon: isIcon
+                ? GestureDetector(
+                    onTap: onTap,
+                    child: Icon(icn),
+                  )
+                : SizedBox(),
             filled: true,
             hintText: hintText,
             fillColor: Colors.white,

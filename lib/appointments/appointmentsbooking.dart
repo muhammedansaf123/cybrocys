@@ -120,8 +120,6 @@ class _AppointmenttileState extends State<Appointmenttile> {
     final appointmentid = Uuid().v4();
     if (_selectedDate!.isAfter(today) || _selectedDate!.day == today.day) {
       try {
-       
-      
         FirebaseFirestore.instance
             .collection('appointments')
             .doc(appointmentid)
@@ -145,7 +143,6 @@ class _AppointmenttileState extends State<Appointmenttile> {
           'code': 'a',
           'note': "",
           'prescribed': 'null',
-           
         });
         if (mounted) {
           setState(() {
@@ -220,7 +217,9 @@ class _AppointmenttileState extends State<Appointmenttile> {
               ),
               shape: BoxShape.circle,
               image: DecorationImage(
-                image: FileImage(File(widget.url)),
+                image: NetworkImage(
+                  widget.url,
+                ),
                 fit: BoxFit.cover,
               ),
             ),
@@ -380,7 +379,7 @@ class _DialogContainerState extends State<DialogContainer> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       image: DecorationImage(
-                        image: FileImage(File(widget.url)),
+                        image: NetworkImage(widget.url),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -606,7 +605,8 @@ class AppointmentTextfield extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(maxLength: 35,
+    return TextField(
+      maxLength: 35,
       controller: controller,
       decoration: InputDecoration(
         labelText: hinttext,
