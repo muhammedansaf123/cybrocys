@@ -39,18 +39,77 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
   TextEditingController surgeonController = TextEditingController();
   TextEditingController preSurgeryInstructionsController =
       TextEditingController();
-
+  
+  final TextEditingController _differenceController = TextEditingController();
   TextEditingController wardController = TextEditingController();
-  TextEditingController durationController = TextEditingController();
-
+  int? durationinseconds;
   TextEditingController specialInstructionsController = TextEditingController();
   String uid = FirebaseAuth.instance.currentUser!.uid;
   DateTime? _selectedDate;
 
-  // Updated surgery method
+  DateTime? _startDate;
+  DateTime? _endDate;
+  Future<void> _pickDateAndTime(BuildContext context, bool isStartDate) async {
+    DateTime initialDate = isStartDate
+        ? (_startDate ?? DateTime.now())
+        : (_endDate ?? (_startDate != null ? _startDate! : DateTime.now()));
+    DateTime firstDate =
+        isStartDate ? DateTime.now() : (_startDate ?? DateTime.now());
+
+    
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate != null) {
+     
+      TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(initialDate),
+      );
+
+      if (pickedTime != null) {
+        
+        DateTime finalDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+
+        setState(() {
+          if (isStartDate) {
+            _startDate = finalDateTime;
+            if (_endDate != null && _endDate!.isBefore(_startDate!)) {
+              _endDate = null;
+            }
+          } else {
+            _endDate = finalDateTime;
+          }
+          _calculateDifference();
+        });
+      }
+    }
+  }
+
+  void _calculateDifference() {
+    if (_startDate != null && _endDate != null) {
+      final difference = _endDate!.difference(_startDate!);
+      final hours = difference.inHours;
+      setState(() {
+        durationinseconds = difference.inSeconds;
+      });
+      _differenceController.text = '$hours hours';
+    } else {
+      _differenceController.clear();
+    }
+  }
 
   void surgery() async {
-    final date = DateFormat('dd-MM-yyyy').format(_selectedDate!);
     try {
       FirebaseFirestore.instance
           .collection('appointments')
@@ -72,7 +131,9 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
         'room': roomController.text,
         'anesthesiaType': anesthesiaController.text,
         'preSurgeryInstructions': preSurgeryInstructionsController.text,
-        'payment': 'notpaid'
+        'payment': 'notpaid',
+        'starttime': DateTime.now(),
+        'isstarted': false,
       });
       _clearFields();
       _navigateToHomepage();
@@ -83,7 +144,7 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
 
   // Updated admit method
   void admit() async {
-    final date = DateFormat('dd-MM-yyyy').format(_selectedDate!);
+    
     try {
       FirebaseFirestore.instance
           .collection('appointments')
@@ -101,10 +162,14 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
         'patientid': widget.patientid,
         'status': 'Pending',
         'ward': wardController.text,
-        'durationOfStay': durationController.text,
-        'admissionDate': date,
+        'durationOfStay': _differenceController.text,
+        'admissionDate': _startDate,
+        'enddate': _endDate,
         'specialInstructions': specialInstructionsController.text,
-        'payment': 'notpaid'
+        'payment': 'notpaid',
+        'durationinseconds': durationinseconds,
+        'starttime': DateTime.now(),
+        'isstarted': false,
       });
       _clearFields();
       _navigateToHomepage();
@@ -123,7 +188,6 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
     preSurgeryInstructionsController.clear();
 
     wardController.clear();
-    durationController.clear();
 
     specialInstructionsController.clear();
   }
@@ -139,15 +203,7 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
   @override
   void initState() {
     if (mounted) {
-      setState(() {
-        _selectedDate = DateTime.now();
-        print(DateTime.now());
-
-        date = DateFormat("dd/MM/yyyy").format(DateTime.now());
-        print(date);
-        appointmentDate = DateFormat("dd-MM-yyyy").format(DateTime.now());
-        print(appointmentDate);
-      });
+      setState(() {});
     }
     // TODO: implement initState
 
@@ -204,55 +260,68 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
                   controller: wardController,
                   hinttext: "Ward Number (for admit)",
                 ),
-                SizedBox(height: 20),
-                AppointmentTextfield(
-                  controller: durationController,
-                  hinttext: "Duration of Stay",
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _pickDateAndTime(context, true),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 15.0),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            _startDate != null
+                                ? DateFormat('dd/MM/yyyy HH:mm')
+                                    .format(_startDate!)
+                                : 'Select a Starting Date & Time',
+                            style: TextStyle(
+                                fontSize: 16.0, color: Colors.black87),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 16.0),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _pickDateAndTime(context, false),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 15.0),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            _endDate != null
+                                ? DateFormat('dd/MM/yyyy HH:mm')
+                                    .format(_endDate!)
+                                : 'Select a Ending Date & Time',
+                            style: TextStyle(
+                                fontSize: 16.0, color: Colors.black87),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16.0),
+                AppointmentTextfield(
+                  controller: _differenceController,
+                  hinttext: "hours",
+                ),
                 AppointmentTextfield(
                   controller: specialInstructionsController,
                   hinttext: "Special Instructions",
                 ),
               ],
               SizedBox(height: 20),
-              InkWell(
-                onTap: () async {
-                  final pickedDate = await showDatePicker(
-                    barrierDismissible: true,
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2101),
-                  );
-                  if (pickedDate != null) {
-                    setState(() {
-                      _selectedDate = pickedDate;
-                      appointmentDate =
-                          DateFormat('dd-MM-yyyy').format(_selectedDate!);
-                    });
-                  }
-                },
-                child: Container(
-                  height: 50,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        DateFormat('dd-MM-yyyy').format(_selectedDate!),
-                        style: TextStyle(color: Colors.black87),
-                      ),
-                      Spacer(),
-                      Icon(Icons.calendar_today, color: Colors.grey),
-                    ],
-                  ),
-                ),
-              ),
               SizedBox(height: 20),
               Mybutton(
                 load: false,

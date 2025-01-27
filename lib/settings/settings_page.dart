@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hospital_managment/appointments/appointments_provider.dart';
 import 'package:hospital_managment/components/components.dart';
 import 'package:hospital_managment/login/login_page.dart';
 import 'package:hospital_managment/profile/edit_profile.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -399,6 +401,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   ListTile(
                     contentPadding: EdgeInsets.all(0),
                     onTap: () {
+                      Provider.of<AppointmentsProvider>(context, listen: false)
+                          .clearAll();
                       FirebaseAuth.instance.signOut();
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(

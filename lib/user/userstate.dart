@@ -18,19 +18,18 @@ class _UserStateState extends State<UserState> {
     return StreamBuilder(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, usersnapshot) {
-        // If the user is signed in, navigate to the homepage
+     
         if (usersnapshot.data != null && !isSignupCompleted) {
           return Homepage();
         }
 
-        // Handle error
         else if (usersnapshot.hasError) {
           return Scaffold(
             body: Center(child: Text('Unexpected Error Occurred')),
           );
         }
 
-        // If no user is logged in, show the login page
+        
         else if (usersnapshot.data == null) {
           return LoginDemo();
         }

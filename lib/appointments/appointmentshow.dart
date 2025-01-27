@@ -1,755 +1,389 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:hospital_managment/appointments/appointment_pdf.dart';
-import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
+import 'package:hospital_managment/appointments/appointments_provider.dart';
+import 'package:hospital_managment/appointments/components/appointmenttile.dart';
 import 'package:hospital_managment/surgeries_admit/surgery_admit_forms.dart';
 import 'package:hospital_managment/components/components.dart';
 import 'package:hospital_managment/appointments/appointmentsbooking.dart';
-import 'package:hospital_managment/user/userdata.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:printing/printing.dart';
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-class Appointmentshowpage extends StatefulWidget {
-  final Map<dynamic, dynamic> data;
-  const Appointmentshowpage({super.key, required this.data});
-
-  @override
-  State<Appointmentshowpage> createState() => _MedicalRecordsState();
-}
-
-class _MedicalRecordsState extends State<Appointmentshowpage> {
-  String _selectedDate = '';
-  String _dateCount = '';
-  String _range = '';
-  String _rangeCount = '';
-  DateTime startDate = DateTime.now().subtract(Duration(days: 300));
-  DateTime endDate = DateTime.now().add(Duration(days: 300));
-  String currentfilter = 'None';
-  String? selectedname;
-  Query? query;
-  List<Map<String, dynamic>> _filteredRecords = [];
-  List<Map<String, dynamic>> _allRecords = [];
-
-  DateTime? selectedDate;
-  bool isFilter = false;
-  bool issearch = false;
-  bool isnamefilter = false;
-  DateTime? filterdate = DateTime.now();
-  String status = '';
-  TextEditingController _searchController = TextEditingController();
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-  @override
-  void initState() {
-    fetchuserdata();
-    if (widget.data['roles'] == 'patient') {
-      fetchAppointmentspatients();
-    } else {
-      fetchAppointmentsdoctor();
-    }
-    super.initState();
-  }
-
-  Future<List<Map<String, dynamic>>> fetchAppointmentspatients() async {
-    print('patient');
-    QuerySnapshot<Map<String, dynamic>> querySnapshot = await FirebaseFirestore
-        .instance
-        .collection('appointments')
-        .where('patientid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-        .orderBy('code', descending: false)
-        .get();
-
-    List<Map<String, dynamic>> appointments =
-        querySnapshot.docs.map((doc) => doc.data()).toList();
-    print(appointments);
-    setState(() {
-      _allRecords = appointments;
-      _filteredRecords = _allRecords;
-    });
-    return appointments;
-  }
-
-  Future<List<Map<String, dynamic>>> fetchAppointmentsdoctor() async {
-    print('doctor');
-    QuerySnapshot<Map<String, dynamic>> querySnapshot = await FirebaseFirestore
-        .instance
-        .collection('appointments')
-        .where('doctorid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-        .orderBy('code', descending: false)
-        .get();
-
-    List<Map<String, dynamic>> appointments =
-        querySnapshot.docs.map((doc) => doc.data()).toList();
-
-    setState(() {
-      _allRecords = appointments;
-      _filteredRecords = _allRecords;
-    });
-    return appointments;
-  }
-
-  void fetchuserdata() async {
-    final user = await Userdata(uid: uid).getData();
-  }
-
-  void _onSelectionChanged(DateRangePickerSelectionChangedArgs args) {
-    setState(() {
-      if (args.value is PickerDateRange) {
-        startDate = args.value.startDate;
-
-        endDate = args.value.endDate ?? args.value.startDate;
-        _filter();
-      } else if (args.value is DateTime) {
-        _selectedDate = args.value.toString();
-      } else if (args.value is List<DateTime>) {
-        _dateCount = args.value.length.toString();
-      } else {
-        _rangeCount = args.value.length.toString();
-      }
-    });
-  }
-
-  List<Map<String, dynamic>> filterTasks(
-      {required List<Map<String, dynamic>> allRecords,
-      required String query,
-      String? selectedName,
-      DateTime? startDate,
-      DateTime? endDate}) {
-    return allRecords.where((appointment) {
-      final matchesQuery = query.isEmpty ||
-          appointment.values.any((value) {
-            if (value is String) {
-              return value.toLowerCase().contains(query.toLowerCase());
-            }
-            return false;
-          });
-      print('matchesQuery: $matchesQuery');
-
-      final matchesSelectedName = selectedName == null ||
-          (appointment['doctorsname'] as String)
-              .toLowerCase()
-              .contains(selectedName.toLowerCase());
-      print('matchesSelectedName: $matchesSelectedName');
-
-      final matchesDateRange = (startDate == null && endDate == null) ||
-          (startDate != null &&
-              endDate != null &&
-              (appointment['date'] as Timestamp).toDate().isAfter(startDate) &&
-              (appointment['date'] as Timestamp).toDate().isBefore(endDate));
-      print('matchesDateRange: $matchesDateRange');
-
-      return matchesQuery && matchesSelectedName && matchesDateRange;
-    }).toList();
-  }
-
-  void _filter() {
-    setState(() {
-      _filteredRecords = filterTasks(
-          allRecords: _allRecords,
-          query: _searchController.text,
-          selectedName: selectedname,
-          startDate: startDate,
-          endDate: endDate);
-    });
-  }
-
-  void _clear() {
-    setState(() {
-      _filteredRecords = filterTasks(
-        allRecords: _allRecords,
-        query: _searchController.text,
-        selectedName: null,
-        startDate: DateTime.now().subtract(Duration(days: 300)),
-        endDate: DateTime.now().add(
-          Duration(days: 300),
-        ),
-      );
-
-      selectedDate = null;
-      selectedname = null;
-    });
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
-  }
+class Appointmentshowpage extends StatelessWidget {
+  const Appointmentshowpage({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[200],
-      appBar: AppBar(
-        actions: [
-          if (widget.data['roles'] == 'patient')
-            IconButton(
-                onPressed: () {
-                  WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
-                  showModalBottomSheet<void>(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return StatefulBuilder(builder:
-                          (BuildContext context, StateSetter setState) {
-                        return SizedBox(
-                          height: 500,
-                          width: MediaQuery.of(context).size.width,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    "Filter By",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  SizedBox(height: 5),
-                                  Text(
-                                    "Select a filtering method",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  SizedBox(height: 5),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.only(left: 15),
-                                        width: 150,
-                                        decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: Colors.black, width: 2),
+    return Consumer<AppointmentsProvider>(
+      builder: (context, provider, child) {
+        return Scaffold(
+          backgroundColor: Colors.grey[200],
+          appBar: AppBar(
+            actions: [
+              if (provider.userdata!['roles'] == 'patient')
+                IconButton(
+                    onPressed: () {
+                      WidgetsBinding.instance.focusManager.primaryFocus
+                          ?.unfocus();
+                      showModalBottomSheet<void>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return StatefulBuilder(builder:
+                              (BuildContext context, StateSetter setState) {
+                            return SizedBox(
+                              height: 500,
+                              width: MediaQuery.of(context).size.width,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text(
+                                        "Filter By",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 5),
+                                      Text(
+                                        "Select a filtering method",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      SizedBox(height: 5),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.only(left: 15),
+                                            width: 150,
+                                            decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: Colors.black,
+                                                    width: 2),
+                                                borderRadius:
+                                                    BorderRadius.circular(10)),
+                                            child: DropdownButton<String>(
+                                              underline:
+                                                  DropdownButtonHideUnderline(
+                                                      child: SizedBox()),
+                                              value: provider.currentfilter,
+                                              items: <String>[
+                                                'Doctors name',
+                                                'Date range',
+                                              ].map((String value) {
+                                                return DropdownMenuItem<String>(
+                                                  value: value,
+                                                  child: Text(value),
+                                                );
+                                              }).toList(),
+                                              onChanged: (value) {
+                                                provider.currentfilter = value!;
+                                              },
+                                            ),
+                                          ),
+                                          Spacer(),
+                                          ElevatedButton(
+                                              onPressed: () {
+                                                provider.clearFilters();
+                                              },
+                                              child: Text("Clear Filter"))
+                                        ],
+                                      ),
+                                      if (provider.currentfilter ==
+                                          'Date range') ...[
+                                        Container(
+                                          decoration: BoxDecoration(
                                             borderRadius:
-                                                BorderRadius.circular(10)),
-                                        child: DropdownButton<String>(
-                                          underline:
-                                              DropdownButtonHideUnderline(
-                                                  child: SizedBox()),
-                                          value: currentfilter,
-                                          items: <String>[
-                                            'None',
-                                            'Doctors name',
-                                            'Date range',
-                                          ].map((String value) {
-                                            return DropdownMenuItem<String>(
-                                              value: value,
-                                              child: Text(value),
-                                            );
-                                          }).toList(),
-                                          onChanged: (value) {
-                                            setState(() {
-                                              currentfilter = value!;
-                                              print(currentfilter);
-                                            });
-                                          },
+                                                BorderRadius.circular(12),
+                                            color: Colors.grey[200],
+                                          ),
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: SfDateRangePicker(
+                                            onSelectionChanged:
+                                                provider.onSelectionChanged,
+                                            selectionMode:
+                                                DateRangePickerSelectionMode
+                                                    .range,
+                                            initialSelectedRange:
+                                                PickerDateRange(
+                                              provider.startDate ??
+                                                  DateTime.now().subtract(
+                                                      const Duration(days: 1)),
+                                              provider.endDate ??
+                                                  DateTime.now().add(
+                                                      const Duration(days: 1)),
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                      Spacer(),
-                                      ElevatedButton(
-                                          onPressed: () {
-                                            _clear();
-                                          },
-                                          child: Text("Clear Filter"))
-                                    ],
-                                  ),
-                                  if (currentfilter == 'None') ...[
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    Container(
-                                      height: 250,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        color: Colors.grey[200],
-                                      ),
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Center(
-                                        child:
-                                            Text('No Filter Category Selected'),
-                                      ),
-                                    ),
-                                  ],
-                                  if (currentfilter == 'Date range') ...[
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        color: Colors.grey[200],
-                                      ),
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: SfDateRangePicker(
-                                        onSelectionChanged: _onSelectionChanged,
-                                        selectionMode:
-                                            DateRangePickerSelectionMode.range,
-                                        initialSelectedRange: PickerDateRange(
-                                          DateTime.now().subtract(
-                                              const Duration(days: 1)),
-                                          DateTime.now()
-                                              .add(const Duration(days: 1)),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                  if (currentfilter == 'Doctors name') ...[
-                                    Container(
-                                      height: 300,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        color: Colors.grey[200],
-                                      ),
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: StreamBuilder(
-                                        stream: FirebaseFirestore.instance
-                                            .collection('doctors')
-                                            .snapshots(),
-                                        builder: (context,
-                                            AsyncSnapshot<QuerySnapshot>
-                                                snapshot) {
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
-                                            return const Center(
-                                                child:
-                                                    CircularProgressIndicator());
-                                          }
-                                          if (snapshot.hasError) {
-                                            // ignore: avoid_print
-                                            print(
-                                                'Error fetching data: ${snapshot.error}');
-                                            return const Center(
-                                                child: Text(
-                                                    'Error fetching data'));
-                                          }
+                                      ],
+                                      if (provider.currentfilter ==
+                                          'Doctors name') ...[
+                                        Container(
+                                          height: 300,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            color: Colors.grey[200],
+                                          ),
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: StreamBuilder(
+                                            stream: FirebaseFirestore.instance
+                                                .collection('doctors')
+                                                .snapshots(),
+                                            builder: (context,
+                                                AsyncSnapshot<QuerySnapshot>
+                                                    snapshot) {
+                                              if (snapshot.connectionState ==
+                                                  ConnectionState.waiting) {
+                                                return const Center(
+                                                    child:
+                                                        CircularProgressIndicator());
+                                              }
+                                              if (snapshot.hasError) {
+                                                // ignore: avoid_print
+                                                print(
+                                                    'Error fetching data: ${snapshot.error}');
+                                                return const Center(
+                                                    child: Text(
+                                                        'Error fetching data'));
+                                              }
 
-                                          if (snapshot.hasData &&
-                                              snapshot.data!.docs.isEmpty) {
-                                            return const Center(
-                                                child:
-                                                    Text('No Doctors  found'));
-                                          }
-                                          return ListView.builder(
-                                              itemCount:
-                                                  snapshot.data!.docs.length,
-                                              itemBuilder: (context, index) {
-                                                final doctorsdata =
-                                                    snapshot.data!.docs[index];
-                                                final name =
-                                                    doctorsdata['name'];
+                                              if (snapshot.hasData &&
+                                                  snapshot.data!.docs.isEmpty) {
+                                                return const Center(
+                                                    child: Text(
+                                                        'No Doctors  found'));
+                                              }
+                                              return ListView.builder(
+                                                  itemCount: snapshot
+                                                      .data!.docs.length,
+                                                  itemBuilder:
+                                                      (context, index) {
+                                                    final doctorsdata = snapshot
+                                                        .data!.docs[index];
+                                                    final name =
+                                                        doctorsdata['name'];
 
-                                                doctorsdata['rating'];
+                                                    doctorsdata['rating'];
 
-                                                return Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(vertical: 5),
-                                                  child: Material(
-                                                    elevation: 4,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            15),
-                                                    child: Card(
-                                                      color:
-                                                          const Color.fromARGB(
+                                                    return Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 5),
+                                                      child: Material(
+                                                        elevation: 4,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(15),
+                                                        child: Card(
+                                                          color: const Color
+                                                              .fromARGB(
                                                               136, 79, 34, 153),
-                                                      shadowColor:
-                                                          const Color.fromARGB(
-                                                              24, 99, 69, 155),
-                                                      elevation: 15,
-                                                      child: ListTile(
-                                                          onTap: () {
-                                                            print(selectedname);
-                                                            setState(() {
-                                                              selectedname =
-                                                                  name;
-                                                              _filter();
-                                                            });
-                                                          },
-                                                          contentPadding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal:
-                                                                      16,
-                                                                  vertical: 12),
-                                                          leading: Text(
-                                                            name,
-                                                            maxLines: 2,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                            style:
-                                                                const TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 18,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
-                                                          trailing:
-                                                              CircleAvatar(
-                                                            radius: 10,
-                                                            child: CircleAvatar(
-                                                                radius: 8,
-                                                                backgroundColor:
-                                                                    selectedname ==
+                                                          shadowColor:
+                                                              const Color
+                                                                  .fromARGB(24,
+                                                                  99, 69, 155),
+                                                          elevation: 15,
+                                                          child: ListTile(
+                                                              onTap: () {
+                                                                print(provider
+                                                                    .selectedName);
+
+                                                                provider.selectedName =
+                                                                    name;
+                                                                provider
+                                                                    .filter();
+                                                              },
+                                                              contentPadding:
+                                                                  const EdgeInsets
+                                                                      .symmetric(
+                                                                      horizontal:
+                                                                          16,
+                                                                      vertical:
+                                                                          12),
+                                                              leading: Text(
+                                                                name,
+                                                                maxLines: 2,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style:
+                                                                    const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 18,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                              ),
+                                                              trailing:
+                                                                  CircleAvatar(
+                                                                radius: 10,
+                                                                child: CircleAvatar(
+                                                                    radius: 8,
+                                                                    backgroundColor: provider.selectedName ==
                                                                             name
                                                                         ? Colors
                                                                             .green
                                                                         : Colors
                                                                             .black),
-                                                          )),
-                                                    ),
-                                                  ),
-                                                );
-                                              });
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                                                              )),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  });
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        );
-                      });
+                            );
+                          });
+                        },
+                      );
                     },
-                  );
-                },
-                icon: Icon(Icons.tune))
-        ],
-        title: Text(
-          'Appointments list',
-          style: TextStyle(color: Colors.white),
-        ),
-        automaticallyImplyLeading: true,
-        iconTheme: IconThemeData(color: Colors.white),
-        backgroundColor: Colors.deepPurple,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                _filter();
-              },
-              decoration: InputDecoration(
-                suffixIcon: Icon(Icons.search),
-                hintText: "Search...",
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide(color: Colors.deepPurple, width: 2)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.deepPurple, width: 3)),
-              ),
+                    icon: Icon(Icons.tune))
+            ],
+            title: Text(
+              'Appointments list',
+              style: TextStyle(color: Colors.white),
             ),
+            automaticallyImplyLeading: true,
+            iconTheme: IconThemeData(color: Colors.white),
+            backgroundColor: Colors.deepPurple,
           ),
-          SizedBox(
-            height: 5,
-          ),
-          if (widget.data['roles'] == 'patient') ...[
-            Row(
-              children: [
-                Expanded(
-                  child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5),
-                      child: Container(
-                        height: 50,
-                        child: ElevatedButton(
-                            style: ButtonStyle(
-                                backgroundColor:
-                                    WidgetStatePropertyAll(Colors.deepPurple)),
-                            onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          AppointmentsPage(data: widget.data)));
-                            },
-                            child: Text(
-                              "book now",
-                              style: TextStyle(color: Colors.white),
-                            )),
-                      )),
-                )
-              ],
-            ),
-          ],
-          SizedBox(
-            height: 5,
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _filteredRecords.length,
-              itemBuilder: (context, index) {
-                final appointmentData = _filteredRecords[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  child: Appointmentshowtile(
-                    appointmentdata: appointmentData,
-                    userdata: widget.data,
-                    ontap: () {},
-                    onPressed: () {
-                      FirebaseFirestore.instance
-                          .collection('appointments')
-                          .doc(appointmentData['appointmentid'])
-                          .delete();
-                    },
+          body: Container(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: provider.searchController,
+                      onChanged: (value) {
+                        provider.filter();
+                      },
+                      decoration: InputDecoration(
+                        suffixIcon: Icon(Icons.search),
+                        hintText: "Search...",
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            borderSide:
+                                BorderSide(color: Colors.deepPurple, width: 2)),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide:
+                                BorderSide(color: Colors.deepPurple, width: 3)),
+                      ),
+                    ),
                   ),
-                );
-              },
-            ),
-          )
-        ],
-      ),
-    );
-  }
-}
-
-class Appointmentshowtile extends StatefulWidget {
-  final Map appointmentdata;
-
-  final void Function()? onPressed;
-  final void Function()? ontap;
-  final Map userdata;
-  const Appointmentshowtile({
-    super.key,
-    required this.appointmentdata,
-    required this.userdata,
-    required this.onPressed,
-    required this.ontap,
-  });
-
-  @override
-  State<Appointmentshowtile> createState() => _MedicalRecordTileState();
-}
-
-class _MedicalRecordTileState extends State<Appointmentshowtile> {
-  @override
-  Widget build(BuildContext context) {
-    final date = widget.appointmentdata['date'].toDate();
-
-    return Material(
-      elevation: 4,
-      borderRadius: BorderRadius.circular(15),
-      child: Card(
-        color: const Color.fromARGB(136, 79, 34, 153),
-        shadowColor: const Color.fromARGB(24, 99, 69, 155),
-        elevation: 15,
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => DialogAppointmentcontainer(
-                          patentname: widget.appointmentdata['patientname'],
-                          doctorsname: widget.appointmentdata['doctorsname'],
-                          patientid: widget.appointmentdata['patientid'],
-                          reason: widget.appointmentdata['reason'],
-                          appointmentid:
-                              widget.appointmentdata['appointmentid'],
-                          note: widget.appointmentdata['note'],
-                          status: widget.appointmentdata['status'],
-                          userdata: widget.userdata,
-                          date: date,
-                          age: widget.appointmentdata['patientage'],
-                          gender: widget.appointmentdata['gender'],
-                          description: widget.appointmentdata['description'],
-                          rating: widget.appointmentdata['rating'],
-                          url: widget.appointmentdata['doctorimageurl'],
-                          name: widget.userdata['roles'] == 'patient'
-                              ? widget.appointmentdata['doctorsname']
-                              : widget.appointmentdata['patientname'],
-                          type: widget.appointmentdata['type'],
-                          approved: widget.appointmentdata['approved'],
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        )));
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.userdata['roles'] == 'patient'
-                          ? widget.appointmentdata['doctorsname']
-                          : widget.appointmentdata['patientname'],
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      widget.appointmentdata['reason'],
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  SizedBox(
+                    height: 5,
+                  ),
+                  if (provider.userdata!['roles'] == 'patient') ...[
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Icon(Icons.calendar_month),
-                            Text(
-                              DateFormat("dd-MM-yyyy").format(date),
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Icon(Icons.alarm),
-                            Text(
-                              widget.appointmentdata['timeslot'],
-                              maxLines: 4,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ],
-                        ),
+                        Expanded(
+                          child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 5),
+                              child: Container(
+                                height: 50,
+                                child: ElevatedButton(
+                                    style: ButtonStyle(
+                                        backgroundColor: WidgetStatePropertyAll(
+                                            Colors.deepPurple)),
+                                    onPressed: () {
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  AppointmentsPage()));
+                                    },
+                                    child: Text(
+                                      "book now",
+                                      style: TextStyle(color: Colors.white),
+                                    )),
+                              )),
+                        )
                       ],
                     ),
                   ],
-                ),
-                Spacer(),
-                (widget.appointmentdata['approved'] ||
-                        widget.appointmentdata['status'] != "null")
-                    ? Column(
+                  SizedBox(
+                    height: 5,
+                  ),
+                  if (provider.filteredRecords.isEmpty &&
+                      provider.allRecords.isNotEmpty) ...[
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.12,
+                    ),
+                    Container(
+                      child: Column(
                         children: [
-                          Text(
-                            widget.appointmentdata['status'],
-                            style: TextStyle(
-                                color: widget.appointmentdata['status'] ==
-                                        "Approved"
-                                    ? Colors.green
-                                    : Colors.red,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 19),
-                          ),
-                          widget.appointmentdata['prescribed'] == 'null'
-                              ? Text(
-                                  'Nothing selected',
-                                  style: TextStyle(
-                                      color: Colors.orange,
-                                      fontWeight: FontWeight.bold),
-                                )
-                              : Text(
-                                  widget.appointmentdata['prescribed'],
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
-                                ),
+                          Image.asset('assets/nodata1.png'),
                         ],
-                      )
-                    : widget.userdata['roles'] == 'patient'
-                        ? ElevatedButton(
-                            onPressed: widget.onPressed,
-                            child: Text(
-                              'Delete',
+                      ),
+                    ),
+                  ],
+                  if (provider.filteredRecords.isEmpty &&
+                      provider.allRecords.isEmpty) ...[
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.3,
+                    ),
+                    Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ],
+                  if (provider.filteredRecords.isNotEmpty) ...[
+                    Container(
+                      height:provider.userdata!['roles'] == 'patient'? MediaQuery.of(context).size.height * 0.75:MediaQuery.of(context).size.height * 0.85,
+                      child: ListView.builder(
+                        itemCount: provider.filteredRecords.length,
+                        itemBuilder: (context, index) {
+                          final appointmentData =
+                              provider.filteredRecords[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Appointmentshowtile(
+                              appointmentdata: appointmentData,
+                              userdata: provider.userdata!,
+                              ontap: () {},
+                              onPressed: () {
+                                FirebaseFirestore.instance
+                                    .collection('appointments')
+                                    .doc(appointmentData['appointmentid'])
+                                    .delete();
+                                Provider.of<AppointmentsProvider>(context,
+                                        listen: false)
+                                    .fetchAppointmentsPatients();
+                              },
                             ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 20),
-                                child: CircleAvatar(
-                                  backgroundColor: Colors.white,
-                                  radius: 20,
-                                  child: IconButton(
-                                    tooltip: "Accept",
-                                    icon: const Icon(
-                                      Icons.check,
-                                      color: Colors.green,
-                                    ),
-                                    onPressed: () {
-                                      try {
-                                        FirebaseFirestore.instance
-                                            .collection("appointments")
-                                            .doc(widget.appointmentdata[
-                                                'appointmentid'])
-                                            .update({
-                                          'status': "Approved",
-                                          'approved': true,
-                                          'code': 'b',
-                                        });
-                                        print("status updated");
-                                      } catch (e) {
-                                        print(e);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 10,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 20),
-                                child: CircleAvatar(
-                                  backgroundColor: Colors.white,
-                                  radius: 20,
-                                  child: IconButton(
-                                    tooltip: "Reject",
-                                    icon: const Icon(
-                                      Icons.cancel,
-                                      color: Colors.red,
-                                    ),
-                                    onPressed: () {
-                                      try {
-                                        FirebaseFirestore.instance
-                                            .collection("appointments")
-                                            .doc(widget.appointmentdata[
-                                                'appointmentid'])
-                                            .update({
-                                          'status': "Rejected",
-                                          'approved': false,
-                                          'code': 'c'
-                                        });
-                                        print("status updated");
-                                      } catch (e) {
-                                        print(e);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-              ],
+                          );
+                        },
+                      ),
+                    )
+                  ]
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -822,9 +456,9 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
                     build: (pw.Context context) {
                       return pw.Center(
                         child: pw.Text("Hello World"),
-                      ); // Center
+                      );
                     }));
-                // Page
+               
                 generatePdf(
                     reason: widget.reason,
                     appointmentid: widget.appointmentid,
@@ -1102,4 +736,3 @@ class _DialogContainerState extends State<DialogAppointmentcontainer> {
     );
   }
 }
-

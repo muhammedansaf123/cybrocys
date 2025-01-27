@@ -1,8 +1,10 @@
+import 'package:hospital_managment/medical_records/medical_records_provider.dart';
 import 'package:hospital_managment/medical_records/medicalrecords.dart';
 import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
 import 'package:hospital_managment/components/components.dart';
 import 'package:flutter/material.dart';
 import 'package:hospital_managment/tester/tester.dart';
+import 'package:provider/provider.dart';
 
 class Drawerwidget extends StatelessWidget {
   final void Function()? onTap;
@@ -44,6 +46,8 @@ class Drawerwidget extends StatelessWidget {
                 icons: Icons.medical_information,
                 title: 'Medical Records',
                 onTap: () {
+                  Provider.of<MedicalRecordsProvider>(context, listen: false)
+                      .fetchmedicalRecorddata();
                   Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -60,10 +64,8 @@ class Drawerwidget extends StatelessWidget {
                 icons: Icons.apartment,
                 title: 'Departments & doctor',
                 onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => TaskSearchFilter()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => Countowntimer()));
                 })
           ],
         ),

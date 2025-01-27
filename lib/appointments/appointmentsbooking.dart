@@ -3,15 +3,19 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:custom_rating_bar/custom_rating_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hospital_managment/appointments/appointments_provider.dart';
+import 'package:hospital_managment/appointments/appointmentshow.dart';
 import 'package:hospital_managment/profile/edit_profile.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 class AppointmentsPage extends StatelessWidget {
-  final Map<dynamic, dynamic> data;
-  const AppointmentsPage({super.key, required this.data});
+  const AppointmentsPage({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -54,8 +58,8 @@ class AppointmentsPage extends StatelessWidget {
 
                 return Padding(
                     padding: const EdgeInsets.symmetric(
-                        vertical: 4), // Add vertical spacing here
-                    child: Appointmenttile(
+                        vertical: 4),
+                    child: AppointmenttileBooking(
                         uid: uid,
                         availablity: available,
                         name: name,
@@ -69,14 +73,14 @@ class AppointmentsPage extends StatelessWidget {
   }
 }
 
-class Appointmenttile extends StatefulWidget {
+class AppointmenttileBooking extends StatefulWidget {
   final String url;
   final String name;
   final double rating;
   final String availablity;
   final String type;
   final String uid;
-  const Appointmenttile(
+  const AppointmenttileBooking(
       {super.key,
       required this.availablity,
       required this.name,
@@ -86,7 +90,7 @@ class Appointmenttile extends StatefulWidget {
       required this.url});
 
   @override
-  State<Appointmenttile> createState() => _AppointmenttileState();
+  State<AppointmenttileBooking> createState() => _AppointmenttileState();
 }
 
 TextEditingController reasoncontroller = TextEditingController();
@@ -113,12 +117,16 @@ var items = [
   '5.00 PM - 6.00 PM',
 ];
 
-class _AppointmenttileState extends State<Appointmenttile> {
+class _AppointmenttileState extends State<AppointmenttileBooking> {
   void appointmentRequest() {
     DateTime today = DateTime.now();
     String reasons = reasoncontroller.text;
     final appointmentid = Uuid().v4();
-    if (_selectedDate!.isAfter(today) || _selectedDate!.day == today.day) {
+    if (_selectedDate!.isAfter(today) ||
+        _selectedDate!.day == today.day &&
+            reasoncontroller.text.isNotEmpty &&
+            agecontroller.text.isNotEmpty &&
+            descriptioncontroller.text.isNotEmpty) {
       try {
         FirebaseFirestore.instance
             .collection('appointments')
@@ -152,8 +160,10 @@ class _AppointmenttileState extends State<Appointmenttile> {
           });
         }
         Navigator.pop(context);
+        Navigator.pop(context);
         reasoncontroller.clear();
-
+        Provider.of<AppointmentsProvider>(context, listen: false)
+            .fetchAppointmentsPatients();
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('request sent successfully')));
       } catch (e) {
@@ -237,7 +247,7 @@ class _AppointmenttileState extends State<Appointmenttile> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 4), // Decreased vertical space here
+              const SizedBox(height: 4),
               Text(
                 widget.type,
                 maxLines: 1,
@@ -337,259 +347,269 @@ class _DialogContainerState extends State<DialogContainer> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        padding: EdgeInsets.all(20),
-        height: MediaQuery.of(context).size.height,
-        width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 3,
-              blurRadius: 10,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    "Book Your Appointment",
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20),
-                  ),
-                  Spacer(),
-                ],
-              ),
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: NetworkImage(widget.url),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 15),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.name,
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        widget.type,
-                        style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                  Spacer(),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RatingBar.readOnly(
-                        isHalfAllowed: true,
-                        halfFilledIcon: Icons.star_half,
-                        filledColor: Colors.amber,
-                        size: 25,
-                        filledIcon: Icons.star,
-                        emptyIcon: Icons.star_border,
-                        initialRating: widget.rating,
-                        maxRating: 5,
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        widget.availablity,
-                        style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(height: 30),
-              Text(
-                "Enter Details",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 10),
-              AppointmentTextfield(
-                  controller: namecontroller, hinttext: "Full Name"),
-              SizedBox(height: 15),
-              AppointmentTextfield(controller: agecontroller, hinttext: "Age"),
-              SizedBox(height: 15),
-              AppointmentTextfield(
-                  controller: reasoncontroller,
-                  hinttext: "Purpose of your visit"),
-              SizedBox(height: 15),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(width: 1, color: Colors.grey)),
-                      child: DropdownButton(
-                        underline:
-                            DropdownButtonHideUnderline(child: SizedBox()),
-                        isExpanded: true,
-                        borderRadius: BorderRadius.circular(15),
-                        style: TextStyle(
-                            color: Colors.black, fontWeight: FontWeight.normal),
-                        value: selectedCategory,
-                        icon: const Icon(Icons.keyboard_arrow_down),
-                        items: gender.map((String gender) {
-                          return DropdownMenuItem(
-                            value: gender,
-                            child: Text(gender),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedCategory = newValue!;
-                            print(selectedCategory);
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 15),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(width: 1, color: Colors.grey)),
-                      child: DropdownButton(
-                        underline:
-                            DropdownButtonHideUnderline(child: SizedBox()),
-                        isExpanded: true,
-                        borderRadius: BorderRadius.circular(15),
-                        style: TextStyle(
-                            color: Colors.black, fontWeight: FontWeight.normal),
-                        value: dropdownvalue,
-                        icon: const Icon(Icons.keyboard_arrow_down),
-                        items: items.map((String values) {
-                          return DropdownMenuItem(
-                            value: values,
-                            child: Text(values),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            dropdownvalue = newValue!;
-                            print(selectedCategory);
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 15,
-              ),
-              InkWell(
-                onTap: () async {
-                  final pickedDate = await showDatePicker(
-                    barrierDismissible: true,
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2101),
-                  );
-                  if (pickedDate != null) {
-                    setState(() {
-                      _selectedDate = pickedDate;
-                      appointmentDate =
-                          DateFormat('dd-MM-yyyy').format(_selectedDate!);
-                    });
-                  }
-                },
-                child: Container(
-                  height: 50,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        DateFormat('dd-MM-yyyy').format(_selectedDate!),
-                        style: TextStyle(color: Colors.black87),
-                      ),
-                      Spacer(),
-                      Icon(Icons.calendar_today, color: Colors.grey),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: descriptioncontroller,
-                minLines: 3,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  labelText: "Describe Your Condition",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                ),
-              ),
-              SizedBox(height: 25),
-              ElevatedButton(
-                onPressed: widget.onPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    "Book Now",
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
-                ),
+    return SafeArea(
+      child: Scaffold(
+        body: Container(
+          padding: EdgeInsets.all(20),
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.3),
+                spreadRadius: 3,
+                blurRadius: 10,
+                offset: Offset(0, 3),
               ),
             ],
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "Book Your Appointment",
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20),
+                    ),
+                    Spacer(),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Row(
+                  children: [
+                    Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: NetworkImage(widget.url),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 15),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.name,
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          widget.type,
+                          style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                    Spacer(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RatingBar.readOnly(
+                          isHalfAllowed: true,
+                          halfFilledIcon: Icons.star_half,
+                          filledColor: Colors.amber,
+                          size: 25,
+                          filledIcon: Icons.star,
+                          emptyIcon: Icons.star_border,
+                          initialRating: widget.rating,
+                          maxRating: 5,
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          widget.availablity,
+                          style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 30),
+                Text(
+                  "Enter Details",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                SizedBox(height: 10),
+                AppointmentTextfield(
+                    keyboardType: TextInputType.name,
+                    controller: namecontroller,
+                    hinttext: "Full Name"),
+                SizedBox(height: 15),
+                AppointmentTextfield(
+                    keyboardType: TextInputType.number,
+                    controller: agecontroller,
+                    hinttext: "Age"),
+                SizedBox(height: 15),
+                AppointmentTextfield(
+                    keyboardType: TextInputType.name,
+                    controller: reasoncontroller,
+                    hinttext: "Purpose of your visit"),
+                SizedBox(height: 15),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(width: 1, color: Colors.grey)),
+                        child: DropdownButton(
+                          underline:
+                              DropdownButtonHideUnderline(child: SizedBox()),
+                          isExpanded: true,
+                          borderRadius: BorderRadius.circular(15),
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.normal),
+                          value: selectedCategory,
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          items: gender.map((String gender) {
+                            return DropdownMenuItem(
+                              value: gender,
+                              child: Text(gender),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedCategory = newValue!;
+                              print(selectedCategory);
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 15),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(width: 1, color: Colors.grey)),
+                        child: DropdownButton(
+                          underline:
+                              DropdownButtonHideUnderline(child: SizedBox()),
+                          isExpanded: true,
+                          borderRadius: BorderRadius.circular(15),
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.normal),
+                          value: dropdownvalue,
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          items: items.map((String values) {
+                            return DropdownMenuItem(
+                              value: values,
+                              child: Text(values),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              dropdownvalue = newValue!;
+                              print(selectedCategory);
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 15,
+                ),
+                InkWell(
+                  onTap: () async {
+                    final pickedDate = await showDatePicker(
+                      barrierDismissible: true,
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null) {
+                      setState(() {
+                        _selectedDate = pickedDate;
+                        appointmentDate =
+                            DateFormat('dd-MM-yyyy').format(_selectedDate!);
+                      });
+                    }
+                  },
+                  child: Container(
+                    height: 50,
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          DateFormat('dd-MM-yyyy').format(_selectedDate!),
+                          style: TextStyle(color: Colors.black87),
+                        ),
+                        Spacer(),
+                        Icon(Icons.calendar_today, color: Colors.black),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                TextField(
+                  controller: descriptioncontroller,
+                  minLines: 3,
+                  maxLines: 5,
+                  decoration: InputDecoration(
+                    labelText: "Describe Your Condition",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                  ),
+                ),
+                SizedBox(height: 25),
+                ElevatedButton(
+                  onPressed: widget.onPressed,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    padding: EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      "Book Now",
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -600,24 +620,62 @@ class _DialogContainerState extends State<DialogContainer> {
 class AppointmentTextfield extends StatelessWidget {
   final TextEditingController controller;
   final String hinttext;
-  const AppointmentTextfield(
-      {super.key, required this.controller, required this.hinttext});
+  final TextInputType? keyboardType;
+
+  const AppointmentTextfield({
+    super.key,
+    required this.controller,
+    required this.hinttext,
+    this.keyboardType,
+  });
+
+  void _increaseValue() {
+    int currentValue = int.tryParse(controller.text) ?? 0;
+    controller.text = (currentValue + 1).toString();
+  }
+
+  void _decreaseValue() {
+    int currentValue = int.tryParse(controller.text) ?? 0;
+    if (currentValue > 0) {
+      controller.text = (currentValue - 1).toString();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       maxLength: 35,
       controller: controller,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: hinttext,
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey),
+        ),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey),
+        ),
         filled: true,
         fillColor: Colors.grey[100],
+        suffixIcon: keyboardType == TextInputType.number
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                      onTap: () {
+                        _increaseValue();
+                      },
+                      child: Icon(Icons.keyboard_arrow_up)),
+                  InkWell(
+                      onTap: () {
+                        _decreaseValue();
+                      },
+                      child: Icon(Icons.keyboard_arrow_down)),
+                ],
+              )
+            : null,
       ),
     );
   }

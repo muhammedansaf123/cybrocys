@@ -1,19 +1,17 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hospital_managment/login/login_page.dart';
-import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
+import 'package:hospital_managment/appointments/appointments_provider.dart';
 import 'package:hospital_managment/components/components.dart';
 import 'package:hospital_managment/components/const.dart';
 import 'package:hospital_managment/appointments/appointmentshow.dart';
-import 'package:hospital_managment/medical_records/medicalrecords.dart';
 import 'package:hospital_managment/dashboard/drawer_widget.dart';
+import 'package:hospital_managment/medical_records/medical_records_provider.dart';
 import 'package:hospital_managment/profile/hospital/hospital_details.dart';
 import 'package:hospital_managment/profile/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:printing/printing.dart';
+
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class Homepage extends StatefulWidget {
@@ -35,7 +33,7 @@ class _HomepageState extends State<Homepage> {
   @override
   void initState() {
     super.initState();
-
+    Provider.of<AppointmentsProvider>(context, listen: false).getuserdata();
     final id = FirebaseAuth.instance.currentUser!.uid;
     if (mounted) {
       setState(() {
@@ -140,11 +138,12 @@ class _HomepageState extends State<Homepage> {
               return Scaffold(
                 key: _key,
                 drawer: Drawerwidget(onTap: () {
+                  Provider.of<AppointmentsProvider>(context, listen: false)
+                      .fetchAppointmentsPatients();
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>
-                              Appointmentshowpage(data: userdata!)));
+                          builder: (context) => Appointmentshowpage()));
                 }),
                 appBar: AppBar(
                     actions: [
@@ -735,11 +734,12 @@ class _HomepageState extends State<Homepage> {
               return Scaffold(
                 key: _key,
                 drawer: Drawerwidget(onTap: () {
+                  Provider.of<AppointmentsProvider>(context, listen: false)
+                      .fetchAppointmentsPatients();
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>
-                              Appointmentshowpage(data: userdata!)));
+                          builder: (context) => Appointmentshowpage()));
                 }),
                 appBar: AppBar(
                     actions: [
@@ -1334,7 +1334,11 @@ class _HomepageState extends State<Homepage> {
               );
             }
           }
-          return Scaffold(body: Center(child: CircularProgressIndicator(),),);
+          return Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
         });
   }
 }

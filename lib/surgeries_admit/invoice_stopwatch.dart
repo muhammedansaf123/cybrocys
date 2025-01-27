@@ -1,10 +1,15 @@
 import 'dart:async';
 
+import 'package:circular_countdown_timer/circular_countdown_timer.dart';
+import 'package:circular_countdown_timer/countdown_text_format.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hospital_managment/bottomnavigation/bottomnav.dart';
 import 'package:hospital_managment/components/components.dart';
 import 'package:hospital_managment/dashboard/dashboard.dart';
 import 'package:flutter/material.dart';
+import 'package:hospital_managment/surgeries_admit/surgeryandadmit_provider.dart';
 import 'package:pdf/pdf.dart';
+import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import 'package:pdf/widgets.dart' as pw;
@@ -16,10 +21,16 @@ class MyStopwatch extends StatefulWidget {
   final String surgerytype;
   final String id;
   final String patientname;
+  final int startingtime;
+  final Map fulldata;
+  final int duration;
   const MyStopwatch(
       {Key? key,
+      required this.fulldata,
+      required this.duration,
       required this.patientname,
       required this.type,
+      required this.startingtime,
       required this.surgerytype,
       required this.id})
       : super(key: key);
@@ -28,99 +39,28 @@ class MyStopwatch extends StatefulWidget {
   State<MyStopwatch> createState() => _MyStopwatchState();
 }
 
+final CountDownController _controller = CountDownController();
+
 class _MyStopwatchState extends State<MyStopwatch> {
   final Stopwatch _stopwatch = Stopwatch();
-  late Duration _elapsedTime;
-  late String _elapsedTimeString;
-  late Timer timer;
 
-  @override
-  void initState() {
-    super.initState();
+  int timeToSeconds(String time) {
+    List<String> parts = time.split(':');
+    if (parts.length != 3) {
+      throw FormatException('Invalid time format. Expected HH:mm:ss');
+    }
 
-    _elapsedTime = Duration.zero;
-    _elapsedTimeString = _formatElapsedTime(_elapsedTime);
+    int hours = int.parse(parts[0]);
+    int minutes = int.parse(parts[1]);
+    int seconds = int.parse(parts[2]);
 
-    timer = Timer.periodic(const Duration(milliseconds: 100), (Timer timer) {
-      if (_stopwatch.isRunning) {
-        _updateElapsedTime();
-      }
-    });
-  }
-
-  void _startStopwatch() {
-    setState(() {
-      if (!_stopwatch.isRunning) {
-        _stopwatch.start();
-      } else {
-        _stopwatch.stop();
-      }
-    });
-  }
-
-  void _resetStopwatch() {
-    setState(() {
-      double totalAmount = _elapsedTime.inSeconds.toDouble();
-      print(totalAmount); // Debugging print to check the value
-      DateTime date = DateTime.now();
-      String invdate = "${date.day}/${date.month}/${date.year}";
-      double taxes = totalAmount * 0.07;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (context) => InvoiceWidget(
-                  onTriggerFunction: () {},
-                  payment: 'notpaid',
-                  role: 'doctor',
-                  id: widget.id,
-                  type: widget.type,
-                  invoiceNumber: 'INV${invdate}',
-                  patientName: widget.patientname,
-                  patientAddress: '123 Main Street, Springfield',
-                  patientPhone: '123-456-7890',
-                  invoiceDate: DateTime(2025, 1, 14),
-                  dueDate: DateTime(2025, 1, 21),
-                  items: [
-                    {
-                      'item': widget.type,
-                      'description': widget.surgerytype,
-                      'amount': totalAmount
-                    },
-                  ],
-                  subTotal: totalAmount,
-                  taxRate: 7,
-                  taxAmount: taxes,
-                  totalAmount: totalAmount + taxes,
-                  notes: 'Thank you for your prompt payment!',
-                )),
-      );
-    });
-
-    _stopwatch.reset(); // Reset after calculation
-    _stopwatch.stop();
-    _updateElapsedTime();
-  }
-
-  void _updateElapsedTime() {
-    setState(() {
-      _elapsedTime = _stopwatch.elapsed;
-      _elapsedTimeString = _formatElapsedTime(_elapsedTime);
-    });
-  }
-
-  String _formatElapsedTime(Duration time) {
-    return '${time.inMinutes.remainder(60).toString().padLeft(2, '0')}:${(time.inSeconds.remainder(60)).toString().padLeft(2, '0')}.${(time.inMilliseconds % 1000 ~/ 100).toString()}';
-  }
-
-  @override
-  void dispose() {
-    timer.cancel();
-    super.dispose();
+    // Convert the time to total seconds
+    return (hours * 3600) + (minutes * 60) + seconds;
   }
 
   @override
   Widget build(BuildContext context) {
+    print('paused${widget.fulldata['ispaused']}');
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -142,46 +82,167 @@ class _MyStopwatchState extends State<MyStopwatch> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Text(
-                _elapsedTimeString,
-                style: const TextStyle(
-                    fontSize: 40.0,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold),
+              CircularCountDownTimer(
+                duration: widget.duration,
+                initialDuration: widget.fulldata['ispaused']
+                    ? widget.startingtime
+                    : widget.startingtime + 3,
+                controller: _controller,
+                width: 300,
+                height: 300,
+                ringColor: Colors.grey[300]!,
+                ringGradient: null,
+                fillColor: Colors.purpleAccent[100]!,
+                fillGradient: null,
+                backgroundColor: Colors.deepPurple[500],
+                backgroundGradient: null,
+                strokeWidth: 4.0,
+                strokeCap: StrokeCap.round,
+                textStyle: const TextStyle(
+                  fontSize: 30.0,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+                textFormat: CountdownTextFormat.HH_MM_SS,
+                isReverse: false,
+                isReverseAnimation: false,
+                isTimerTextShown: true,
+                autoStart:
+                    widget.fulldata['status'] == "Ongoing" ? true : false,
+                onStart: () {},
+                onComplete: () {},
+                onChange: (String timeStamp) {
+                  if (widget.fulldata['ispaused'] == true) {
+                    _controller.pause();
+                    Provider.of<SurgeryandadmitProvider>(context,listen: false).controllers[index].pause();
+                  }
+                },
               ),
-              const SizedBox(height: 40.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  ElevatedButton(
-                    onPressed: _startStopwatch,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.deepPurple,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30.0, vertical: 15.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
-                      ),
-                    ),
-                    child: Text(_stopwatch.isRunning ? 'Stop' : 'Start'),
-                  ),
-                  const SizedBox(width: 20.0),
-                  ElevatedButton(
-                    onPressed: _resetStopwatch,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.deepPurple,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30.0, vertical: 15.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
-                      ),
-                    ),
-                    child: const Text('Done'),
-                  ),
-                ],
+              SizedBox(
+                height: 30,
               ),
+              if (widget.fulldata['status'] == "Pending" ||
+                  widget.fulldata['status'] == "Ongoing") ...[
+                Row(
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          FirebaseFirestore.instance
+                              .collection("admits")
+                              .doc(widget.fulldata['id'])
+                              .update({
+                            'isstarted': true,
+                            'starttime': Timestamp.now(),
+                            'status': "Ongoing"
+                          });
+                          Provider.of<SurgeryandadmitProvider>(context,
+                                  listen: false)
+                              .fetchsurgeriesandadmits('admits');
+                          _controller.restart();
+                           Provider.of<SurgeryandadmitProvider>(context,listen: false).controllers[index].restart();
+                        },
+                        child: Text("start first")),
+                    Spacer(),
+                    ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                           
+                            final seconds =
+                                timeToSeconds(_controller.getTime()!);
+                           
+                            DateTime currentTime = DateTime.now();
+
+                            DateTime startTime = currentTime
+                                .subtract(Duration(seconds: seconds));
+
+                            Timestamp firestoreTimestamp =
+                                Timestamp.fromDate(startTime);
+
+                            FirebaseFirestore.instance
+                                .collection("admits")
+                                .doc(widget.fulldata['id'])
+                                .update({
+                              'starttime': firestoreTimestamp,
+                              'ispaused': false
+                            });
+                            Provider.of<SurgeryandadmitProvider>(context,
+                                    listen: false)
+                                .fetchsurgeriesandadmits('admits');
+                          });
+                          _controller.start();
+                           Provider.of<SurgeryandadmitProvider>(context,listen: false).controllers[index].start();
+                        },
+                        child: Text("restart")),
+                    Spacer(),
+                    ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            final seconds =
+                                timeToSeconds(_controller.getTime()!);
+                            _controller.pause();
+ Provider.of<SurgeryandadmitProvider>(context,listen: false).controllers[index].pause();
+                            FirebaseFirestore.instance
+                                .collection("admits")
+                                .doc(widget.fulldata['id'])
+                                .update({
+                              'ispaused': true,
+                              'pausedseconds': seconds,
+                            });
+                          });
+                          Provider.of<SurgeryandadmitProvider>(context,
+                                  listen: false)
+                              .fetchsurgeriesandadmits('admits');
+                        },
+                        child: Text("stop")),
+                    SizedBox(
+                      width: 20,
+                    ),
+                    ElevatedButton(
+                        onPressed: () {
+                          double totalAmount = widget.startingtime.toDouble();
+                          print(
+                              totalAmount); // Debugging print to check the value
+                          DateTime date = DateTime.now();
+                          String invdate =
+                              "${date.day}/${date.month}/${date.year}";
+                          double taxes = totalAmount * 0.07;
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => InvoiceWidget(
+                                      onTriggerFunction: () {},
+                                      payment: 'notpaid',
+                                      role: 'doctor',
+                                      id: widget.id,
+                                      type: widget.type,
+                                      invoiceNumber: 'INV${invdate}',
+                                      patientName: widget.patientname,
+                                      patientAddress:
+                                          '123 Main Street, Springfield',
+                                      patientPhone: '123-456-7890',
+                                      invoiceDate: DateTime(2025, 1, 14),
+                                      dueDate: DateTime(2025, 1, 21),
+                                      items: [
+                                        {
+                                          'item': widget.type,
+                                          'description': widget.surgerytype,
+                                          'amount': totalAmount
+                                        },
+                                      ],
+                                      subTotal: totalAmount,
+                                      taxRate: 7,
+                                      taxAmount: taxes,
+                                      totalAmount: totalAmount + taxes,
+                                      notes:
+                                          'Thank you for your prompt payment!',
+                                    )),
+                          );
+                        },
+                        child: Text("Done")),
+                    Spacer()
+                  ],
+                )
+              ]
             ],
           ),
         ),
@@ -338,7 +399,6 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                 
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
