@@ -1,13 +1,7 @@
-import 'dart:async';
-
-import 'package:circular_countdown_timer/circular_countdown_timer.dart';
-import 'package:circular_countdown_timer/countdown_text_format.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hospital_managment/bottomnavigation/bottomnav.dart';
-import 'package:hospital_managment/components/components.dart';
-import 'package:hospital_managment/dashboard/dashboard.dart';
 import 'package:flutter/material.dart';
-import 'package:hospital_managment/surgeries_admit/surgeryandadmit_provider.dart';
+import 'package:hospital_managment/components/components.dart';
+import 'package:hospital_managment/surgeries_admit/provider/surgeryandadmit_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
@@ -16,243 +10,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:lottie/lottie.dart';
 
-class MyStopwatch extends StatefulWidget {
-  final String type;
-  final String surgerytype;
-  final String id;
-  final String patientname;
-  final int startingtime;
-  final Map fulldata;
-  final int duration;
-  const MyStopwatch(
-      {Key? key,
-      required this.fulldata,
-      required this.duration,
-      required this.patientname,
-      required this.type,
-      required this.startingtime,
-      required this.surgerytype,
-      required this.id})
-      : super(key: key);
-
-  @override
-  State<MyStopwatch> createState() => _MyStopwatchState();
-}
-
-final CountDownController _controller = CountDownController();
-
-class _MyStopwatchState extends State<MyStopwatch> {
-  final Stopwatch _stopwatch = Stopwatch();
-
-  int timeToSeconds(String time) {
-    List<String> parts = time.split(':');
-    if (parts.length != 3) {
-      throw FormatException('Invalid time format. Expected HH:mm:ss');
-    }
-
-    int hours = int.parse(parts[0]);
-    int minutes = int.parse(parts[1]);
-    int seconds = int.parse(parts[2]);
-
-    // Convert the time to total seconds
-    return (hours * 3600) + (minutes * 60) + seconds;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    print('paused${widget.fulldata['ispaused']}');
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '${widget.type} Timer',
-          style: TextStyle(color: Colors.white),
-        ),
-        iconTheme: IconThemeData(color: Colors.white),
-        backgroundColor: Colors.deepPurple,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.deepPurpleAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              CircularCountDownTimer(
-                duration: widget.duration,
-                initialDuration: widget.fulldata['ispaused']
-                    ? widget.startingtime
-                    : widget.startingtime + 3,
-                controller: _controller,
-                width: 300,
-                height: 300,
-                ringColor: Colors.grey[300]!,
-                ringGradient: null,
-                fillColor: Colors.purpleAccent[100]!,
-                fillGradient: null,
-                backgroundColor: Colors.deepPurple[500],
-                backgroundGradient: null,
-                strokeWidth: 4.0,
-                strokeCap: StrokeCap.round,
-                textStyle: const TextStyle(
-                  fontSize: 30.0,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-                textFormat: CountdownTextFormat.HH_MM_SS,
-                isReverse: false,
-                isReverseAnimation: false,
-                isTimerTextShown: true,
-                autoStart:
-                    widget.fulldata['status'] == "Ongoing" ? true : false,
-                onStart: () {},
-                onComplete: () {},
-                onChange: (String timeStamp) {
-                  if (widget.fulldata['ispaused'] == true) {
-                    _controller.pause();
-                    Provider.of<SurgeryandadmitProvider>(context,listen: false).controllers[index].pause();
-                  }
-                },
-              ),
-              SizedBox(
-                height: 30,
-              ),
-              if (widget.fulldata['status'] == "Pending" ||
-                  widget.fulldata['status'] == "Ongoing") ...[
-                Row(
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          FirebaseFirestore.instance
-                              .collection("admits")
-                              .doc(widget.fulldata['id'])
-                              .update({
-                            'isstarted': true,
-                            'starttime': Timestamp.now(),
-                            'status': "Ongoing"
-                          });
-                          Provider.of<SurgeryandadmitProvider>(context,
-                                  listen: false)
-                              .fetchsurgeriesandadmits('admits');
-                          _controller.restart();
-                           Provider.of<SurgeryandadmitProvider>(context,listen: false).controllers[index].restart();
-                        },
-                        child: Text("start first")),
-                    Spacer(),
-                    ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                           
-                            final seconds =
-                                timeToSeconds(_controller.getTime()!);
-                           
-                            DateTime currentTime = DateTime.now();
-
-                            DateTime startTime = currentTime
-                                .subtract(Duration(seconds: seconds));
-
-                            Timestamp firestoreTimestamp =
-                                Timestamp.fromDate(startTime);
-
-                            FirebaseFirestore.instance
-                                .collection("admits")
-                                .doc(widget.fulldata['id'])
-                                .update({
-                              'starttime': firestoreTimestamp,
-                              'ispaused': false
-                            });
-                            Provider.of<SurgeryandadmitProvider>(context,
-                                    listen: false)
-                                .fetchsurgeriesandadmits('admits');
-                          });
-                          _controller.start();
-                           Provider.of<SurgeryandadmitProvider>(context,listen: false).controllers[index].start();
-                        },
-                        child: Text("restart")),
-                    Spacer(),
-                    ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            final seconds =
-                                timeToSeconds(_controller.getTime()!);
-                            _controller.pause();
- Provider.of<SurgeryandadmitProvider>(context,listen: false).controllers[index].pause();
-                            FirebaseFirestore.instance
-                                .collection("admits")
-                                .doc(widget.fulldata['id'])
-                                .update({
-                              'ispaused': true,
-                              'pausedseconds': seconds,
-                            });
-                          });
-                          Provider.of<SurgeryandadmitProvider>(context,
-                                  listen: false)
-                              .fetchsurgeriesandadmits('admits');
-                        },
-                        child: Text("stop")),
-                    SizedBox(
-                      width: 20,
-                    ),
-                    ElevatedButton(
-                        onPressed: () {
-                          double totalAmount = widget.startingtime.toDouble();
-                          print(
-                              totalAmount); // Debugging print to check the value
-                          DateTime date = DateTime.now();
-                          String invdate =
-                              "${date.day}/${date.month}/${date.year}";
-                          double taxes = totalAmount * 0.07;
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => InvoiceWidget(
-                                      onTriggerFunction: () {},
-                                      payment: 'notpaid',
-                                      role: 'doctor',
-                                      id: widget.id,
-                                      type: widget.type,
-                                      invoiceNumber: 'INV${invdate}',
-                                      patientName: widget.patientname,
-                                      patientAddress:
-                                          '123 Main Street, Springfield',
-                                      patientPhone: '123-456-7890',
-                                      invoiceDate: DateTime(2025, 1, 14),
-                                      dueDate: DateTime(2025, 1, 21),
-                                      items: [
-                                        {
-                                          'item': widget.type,
-                                          'description': widget.surgerytype,
-                                          'amount': totalAmount
-                                        },
-                                      ],
-                                      subTotal: totalAmount,
-                                      taxRate: 7,
-                                      taxAmount: taxes,
-                                      totalAmount: totalAmount + taxes,
-                                      notes:
-                                          'Thank you for your prompt payment!',
-                                    )),
-                          );
-                        },
-                        child: Text("Done")),
-                    Spacer()
-                  ],
-                )
-              ]
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class InvoiceWidget extends StatefulWidget {
-  final VoidCallback onTriggerFunction;
   final String type;
   final String invoiceNumber;
   final String patientName;
@@ -270,7 +28,6 @@ class InvoiceWidget extends StatefulWidget {
   final String notes;
   final String id;
   InvoiceWidget({
-    required this.onTriggerFunction,
     required this.role,
     required this.payment,
     required this.id,
@@ -295,15 +52,17 @@ class InvoiceWidget extends StatefulWidget {
 
 class _InvoiceWidgetState extends State<InvoiceWidget> {
   late Razorpay razorpay;
-
+  bool? ispaid = false;
   void handlePaymentSucess(PaymentSuccessResponse response) {
     if (widget.type == 'Surgery') {
+      print("hello");
       FirebaseFirestore.instance
           .collection('surgeries')
           .doc(widget.id)
           .update({'payment': 'paid'});
     }
     if (widget.type == 'Admit') {
+      print("hello");
       FirebaseFirestore.instance
           .collection('admits')
           .doc(widget.id)
@@ -345,7 +104,6 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  widget.onTriggerFunction();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
@@ -360,6 +118,14 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
         );
       },
     );
+    Provider.of<SurgeryandadmitProvider>(context, listen: false)
+        .fetchsurgeriesandadmits("surgeries");
+    Provider.of<SurgeryandadmitProvider>(context, listen: false)
+        .fetchsurgeriesandadmits("admits");
+    setState(() {
+      ispaid = true;
+      print(ispaid);
+    });
   }
 
   void handlePaymentError(PaymentFailureResponse response) {
@@ -456,16 +222,6 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
     try {
       print(widget.type);
       if (widget.type == 'Surgery') {
-        FirebaseFirestore.instance
-            .collection('surgeries')
-            .doc(widget.id)
-            .update({'status': 'Success'});
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => Homepage()),
-          (Route<dynamic> route) => false,
-        );
-
         Map<String, dynamic> invoiceData = {
           'id': widget.id,
           'type': widget.type,
@@ -482,7 +238,15 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
           'totalAmount': widget.totalAmount,
           'notes': widget.notes,
         };
-
+        FirebaseFirestore.instance
+            .collection('surgeries')
+            .doc(widget.id)
+            .update({
+          'isstarted': false,
+          'status': "Completed",
+          'finishedseconds': widget.totalAmount,
+        });
+        generateInvoicePdf(context);
         // Adding the data to the 'invoice' collection
         FirebaseFirestore.instance
             .collection('invoice')
@@ -490,16 +254,6 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
             .set(invoiceData);
       }
       if (widget.type == 'Admit') {
-        FirebaseFirestore.instance
-            .collection('admits')
-            .doc(widget.id)
-            .update({'status': 'Success'});
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => Homepage()),
-          (Route<dynamic> route) => false,
-        );
-
         Map<String, dynamic> invoiceData = {
           'id': widget.id,
           'type': widget.type,
@@ -516,12 +270,17 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
           'totalAmount': widget.totalAmount,
           'notes': widget.notes,
         };
-
+        generateInvoicePdf(context);
         // Adding the data to the 'invoice' collection
         FirebaseFirestore.instance
             .collection('invoice')
             .doc(widget.id)
             .set(invoiceData);
+        FirebaseFirestore.instance.collection('admits').doc(widget.id).update({
+          'isstarted': false,
+          'status': "Completed",
+          'finishedseconds': widget.totalAmount,
+        });
       }
     } catch (e) {
       print(e);
@@ -694,7 +453,7 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
         ),
       ),
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        iconTheme: IconThemeData(color: Colors.white),
         backgroundColor: Colors.deepPurple,
         title: Text(
           'Invoice Preview',
@@ -830,11 +589,7 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
 
   Widget Footer(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text('Thank you for choosing City General Hospital.',
-            style: TextStyle(fontSize: 16)),
-        SizedBox(height: 20),
         if (widget.role == 'doctor') ...[
           Mybutton(
               load: false,
@@ -843,17 +598,50 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
               },
               text: "Send")
         ],
-        if (widget.role == 'patient' && widget.payment == 'notpaid') ...[
-          Mybutton(
-              load: false,
-              onPressed: () {
-                checkOut();
-              },
-              text: "Pay")
-        ],
-        if (widget.role == 'patient' && widget.payment == 'paid') ...[
-          Mybutton(
-              color: Colors.green, load: false, onPressed: () {}, text: "Paid")
+        if (widget.role == "patient") ...[
+          StreamBuilder(
+              stream: widget.type == "Surgery"
+                  ? FirebaseFirestore.instance
+                      .collection("surgeries")
+                      .doc(widget.id)
+                      .snapshots()
+                  : FirebaseFirestore.instance
+                      .collection("admits")
+                      .doc(widget.id)
+                      .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final data = snapshot.data;
+                  print(data!                                                         ['payment']);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text('Thank you for choosing City General Hospital.',
+                          style: TextStyle(fontSize: 16)),
+                      SizedBox(height: 20),
+                      if (widget.role == 'patient' &&
+                          data!['payment'] == 'notpaid') ...[
+                        Mybutton(
+                            load: false,
+                            onPressed: () {
+                              checkOut();
+                            },
+                            text: "Pay")
+                      ],
+                      if (widget.role == 'patient' &&
+                          data!['payment'] == 'paid') ...[
+                        Mybutton(
+                            color: Colors.green,
+                            load: false,
+                            onPressed: () {},
+                            text: "Paid")
+                      ]
+                    ],
+                  );
+                } else {
+                  return Center(child: CircularProgressIndicator());
+                }
+              }),
         ]
       ],
     );

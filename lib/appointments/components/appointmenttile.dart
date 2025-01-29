@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:hospital_managment/appointments/appointments_provider.dart';
+import 'package:hospital_managment/appointments/provider/appointments_provider.dart';
 import 'package:hospital_managment/appointments/appointmentshow.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';

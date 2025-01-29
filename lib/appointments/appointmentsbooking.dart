@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:custom_rating_bar/custom_rating_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hospital_managment/appointments/appointments_provider.dart';
+import 'package:hospital_managment/appointments/components/custom_textfield.dart';
+import 'package:hospital_managment/appointments/provider/appointments_provider.dart';
 import 'package:hospital_managment/appointments/appointmentshow.dart';
 import 'package:hospital_managment/profile/edit_profile.dart';
 
@@ -617,66 +618,3 @@ class _DialogContainerState extends State<DialogContainer> {
   }
 }
 
-class AppointmentTextfield extends StatelessWidget {
-  final TextEditingController controller;
-  final String hinttext;
-  final TextInputType? keyboardType;
-
-  const AppointmentTextfield({
-    super.key,
-    required this.controller,
-    required this.hinttext,
-    this.keyboardType,
-  });
-
-  void _increaseValue() {
-    int currentValue = int.tryParse(controller.text) ?? 0;
-    controller.text = (currentValue + 1).toString();
-  }
-
-  void _decreaseValue() {
-    int currentValue = int.tryParse(controller.text) ?? 0;
-    if (currentValue > 0) {
-      controller.text = (currentValue - 1).toString();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      maxLength: 35,
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: hinttext,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey),
-        ),
-        filled: true,
-        fillColor: Colors.grey[100],
-        suffixIcon: keyboardType == TextInputType.number
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  InkWell(
-                      onTap: () {
-                        _increaseValue();
-                      },
-                      child: Icon(Icons.keyboard_arrow_up)),
-                  InkWell(
-                      onTap: () {
-                        _decreaseValue();
-                      },
-                      child: Icon(Icons.keyboard_arrow_down)),
-                ],
-              )
-            : null,
-      ),
-    );
-  }
-}

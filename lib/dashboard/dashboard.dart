@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hospital_managment/appointments/appointments_provider.dart';
+import 'package:hospital_managment/appointments/provider/appointments_provider.dart';
 import 'package:hospital_managment/components/components.dart';
 import 'package:hospital_managment/components/const.dart';
 import 'package:hospital_managment/appointments/appointmentshow.dart';

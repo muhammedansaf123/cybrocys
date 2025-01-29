@@ -52,11 +52,7 @@ class MedicalRecordsProvider extends ChangeNotifier {
               .toLowerCase()
               .contains(DateFormat('dd-MM-yyyy').format(date));
 
-      print('query $matchesQuery');
-      print('date $matchesDateRange');
-      print('name $matches_SelectedName');
-      print('_status $matches_SelectedName');
-      print('date $date');
+     
       return matchesQuery &&
           matches_SelectedName &&
           matchesSelected_Status &&

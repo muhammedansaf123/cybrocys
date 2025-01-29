@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:hospital_managment/appointments/appointment_pdf.dart';
-import 'package:hospital_managment/appointments/appointments_provider.dart';
+import 'package:hospital_managment/appointments/components/appointment_pdf.dart';
+import 'package:hospital_managment/appointments/provider/appointments_provider.dart';
 import 'package:hospital_managment/appointments/components/appointmenttile.dart';
 import 'package:hospital_managment/surgeries_admit/surgery_admit_forms.dart';
 import 'package:hospital_managment/components/components.dart';
@@ -351,7 +351,7 @@ class Appointmentshowpage extends StatelessWidget {
                   ],
                   if (provider.filteredRecords.isNotEmpty) ...[
                     Container(
-                      height:provider.userdata!['roles'] == 'patient'? MediaQuery.of(context).size.height * 0.75:MediaQuery.of(context).size.height * 0.85,
+                      height:provider.userdata!['roles'] == 'patient'? MediaQuery.of(context).size.height * 0.75:MediaQuery.of(context).size.height * 0.78,
                       child: ListView.builder(
                         itemCount: provider.filteredRecords.length,
                         itemBuilder: (context, index) {

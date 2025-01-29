@@ -1,179 +1,180 @@
 import 'package:flutter/material.dart';
-import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 
+class AppointmentCard extends StatelessWidget {
+  final String condition;
+  final String patient;
+  final String scheduledDate;
+  final String note;
 
-class Countowntimer extends StatefulWidget {
-  const Countowntimer({super.key, this.title});
-
-  final String? title;
+  const AppointmentCard({
+    super.key,
+    required this.condition,
+    required this.patient,
+    required this.scheduledDate,
+    required this.note,
+  });
 
   @override
-  State<Countowntimer> createState() => _CountowntimerState();
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoRow('Condition', condition),
+            const SizedBox(height: 8),
+            _buildInfoRow('Patient', patient),
+            const SizedBox(height: 8),
+            _buildInfoRow('Scheduled Date', scheduledDate),
+            const SizedBox(height: 12),
+            Text(
+              'Note:',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(note),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            '$label:',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(value),
+        ),
+      ],
+    );
+  }
 }
 
-class _CountowntimerState extends State<Countowntimer> {
-  final int _duration = 10;
-  final CountDownController _controller = CountDownController();
+class Countowntimer extends StatelessWidget {
+  const Countowntimer({super.key});
 
-
-@override
-  void initState() {
-    _controller.pause();
-    // TODO: implement initState
-    super.initState();
-  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     
-      body: Center(
-        child: CircularCountDownTimer(
-          // Countdown duration in Seconds.
-          duration: _duration,
-
-          // Countdown initial elapsed Duration in Seconds.
-          initialDuration: 0,
-
-          // Controls (i.e Start, Pause, Resume, Restart) the Countdown Timer.
-          controller: _controller,
-
-          // Width of the Countdown Widget.
-          width: MediaQuery.of(context).size.width / 2,
-
-          // Height of the Countdown Widget.
-          height: MediaQuery.of(context).size.height / 2,
-
-          // Ring Color for Countdown Widget.
-          ringColor: Colors.grey[300]!,
-
-          // Ring Gradient for Countdown Widget.
-          ringGradient: null,
-
-          // Filling Color for Countdown Widget.
-          fillColor: Colors.purpleAccent[100]!,
-
-          // Filling Gradient for Countdown Widget.
-          fillGradient: null,
-
-          // Background Color for Countdown Widget.
-          backgroundColor: Colors.purple[500],
-
-          // Background Gradient for Countdown Widget.
-          backgroundGradient: null,
-
-          // Border Thickness of the Countdown Ring.
-          strokeWidth: 20.0,
-
-          // Begin and end contours with a flat edge and no extension.
-          strokeCap: StrokeCap.round,
-
-          // Text Style for Countdown Text.
-          textStyle: const TextStyle(
-            fontSize: 33.0,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-
-          // Format for the Countdown Text.
-          textFormat: CountdownTextFormat.S,
-
-          // Handles Countdown Timer (true for Reverse Countdown (max to 0), false for Forward Countdown (0 to max)).
-          isReverse: false,
-
-          // Handles Animation Direction (true for Reverse Animation, false for Forward Animation).
-          isReverseAnimation: false,
-
-          // Handles visibility of the Countdown Text.
-          isTimerTextShown: true,
-
-          // Handles the timer start.
-          autoStart: false,
-
-          // This Callback will execute when the Countdown Starts.
-          onStart: () {
-            // Here, do whatever you want
-            debugPrint('Countdown Started');
-          },
-
-          // This Callback will execute when the Countdown Ends.
-          onComplete: () {
-            // Here, do whatever you want
-            debugPrint('Countdown Ended');
-          },
-
-          // timeFormatterFunction: (defaultFormatterFunction, duration) {
-          //   if (duration.inSeconds == 0) {
-          //     //only format for '0'
-          //     return "Start";
-          //   } else {
-          //     //others durations by it's default format
-          //     return Function.apply(defaultFormatterFunction, [duration]);
-          //   }
-          // },
-
-          // This Callback will execute when the Countdown Changes.
-          onChange: (String timeStamp) {
-            // Here, do whatever you want
-            debugPrint('Countdown Changed $timeStamp');
-          },
+      appBar: AppBar(
+        title: const Text('Appointment Details'),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: AppointmentCardgpt(
+               
+              ),
+            ),
+            // Add more AppointmentCards here if needed
+          ],
         ),
       ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+    );
+  }
+}
+
+
+
+
+class AppointmentCardgpt extends StatelessWidget {
+  const AppointmentCardgpt({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.purple, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(2, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(
-            width: 30,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoRow(Icons.local_hospital, "Condition:", "chcycy"),
+                _buildInfoRow(Icons.person, "Patient:", "yd f"),
+                _buildInfoRow(Icons.calendar_today, "Scheduled Date:", "28/01/2025"),
+                _buildInfoRow(Icons.notes, "Note:", "yfyfyfyf"),
+              ],
+            ),
           ),
-          _button(
-            title: "Start",
-            onPressed: () => _controller.start(),
-          ),
-          const SizedBox(
-            width: 10,
-          ),
-          _button(
-            title: "Pause",
-            onPressed: () {
-              _controller.pause();
-              debugPrint("Pause ${_controller.isPaused}");
-              debugPrint("Resume ${_controller.isResumed}");
-            },
-          ),
-          const SizedBox(
-            width: 10,
-          ),
-          _button(
-            title: "Resume",
-            onPressed: () {
-              _controller.resume();
-              debugPrint("Pause ${_controller.isPaused}");
-              debugPrint("Resume ${_controller.isResumed}");
-            },
-          ),
-          const SizedBox(
-            width: 10,
-          ),
-          _button(
-            title: "Restart",
-            onPressed: () => _controller.restart(duration: _duration),
+          Column(
+            children: [
+              Container(
+                padding: EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.green.shade100,
+                  border: Border.all(color: Colors.green, width: 2),
+                ),
+                child: Icon(Icons.thumb_up, color: Colors.green, size: 24),
+              ),
+              SizedBox(height: 4),
+              Text(
+                "Paid",
+                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _button({required String title, VoidCallback? onPressed}) {
-    return Expanded(
-      child: ElevatedButton(
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.all(Colors.purple),
-        ),
-        onPressed: onPressed,
-        child: Text(
-          title,
-          style: const TextStyle(color: Colors.white),
-        ),
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.blue, size: 20),
+          SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(color: Colors.black87),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+

@@ -1,12 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:hospital_managment/appointments/appointments_provider.dart';
+import 'package:hospital_managment/appointments/provider/appointments_provider.dart';
 import 'package:hospital_managment/components/const.dart';
 import 'package:hospital_managment/firebase_options.dart';
 import 'package:hospital_managment/dashboard/dashboard.dart';
 import 'package:hospital_managment/login/login_page.dart';
 import 'package:hospital_managment/medical_records/medical_records_provider.dart';
-import 'package:hospital_managment/surgeries_admit/surgeryandadmit_provider.dart';
+import 'package:hospital_managment/surgeries_admit/provider/surgeryandadmit_provider.dart';
 import 'package:hospital_managment/user/userstate.dart';
 
 import 'package:flutter/material.dart';

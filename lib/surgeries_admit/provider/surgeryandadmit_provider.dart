@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hospital_managment/user/userdata.dart';
+import 'package:intl/intl.dart';
 
 class SurgeryandadmitProvider extends ChangeNotifier {
   final TextEditingController searchControllersurgery = TextEditingController();
@@ -11,12 +12,13 @@ class SurgeryandadmitProvider extends ChangeNotifier {
   List<Map<String, dynamic>> allsurgeries = [];
   List<Map<String, dynamic>> filteredadmits = [];
   List<Map<String, dynamic>> alladmites = [];
-  int? currentseconds;
+
   String currentfilter = 'Date';
   String? selectedDatesurgery;
   String? selectedDateadmit;
-  final List<CountDownController> controllers = [];
+  final List<CountDownController> admitcontrollers = [];
 
+  final List<CountDownController> surgeycontrollers = [];
   DateTime? datesurgery;
   DateTime? dateadmit;
   String? surgeryStatus;
@@ -34,7 +36,15 @@ class SurgeryandadmitProvider extends ChangeNotifier {
     });
   }
 
-
+  void clear() {
+    surgeycontrollers.clear();
+    admitcontrollers.clear();
+    allsurgeries.clear();
+    alladmites.clear();
+    filteredadmits.clear();
+    filteredsurgeries.clear();
+    notifyListeners();
+  }
 
   void fetchuserdata() async {
     final data =
@@ -48,9 +58,9 @@ class SurgeryandadmitProvider extends ChangeNotifier {
 
   Future<List<Map<String, dynamic>>> fetchsurgeriesandadmits(
       String collectionname) async {
-    print('doctor');
-
+    print("hello");
     if (userdata['roles'] == 'doctor') {
+      print('doctor');
       QuerySnapshot<Map<String, dynamic>> alldata = await FirebaseFirestore
           .instance
           .collection(collectionname)
@@ -64,10 +74,14 @@ class SurgeryandadmitProvider extends ChangeNotifier {
       if (collectionname == 'surgeries') {
         allsurgeries = datas;
         filteredsurgeries = allsurgeries;
+        for (int i = 0; i < datas.length; i++) {
+          surgeycontrollers.add(CountDownController());
+        }
       } else if (collectionname == 'admits') {
         for (int i = 0; i < datas.length; i++) {
-          controllers.add(CountDownController());
+          admitcontrollers.add(CountDownController());
         }
+
         alladmites = datas;
         filteredadmits = alladmites;
       }
@@ -85,9 +99,16 @@ class SurgeryandadmitProvider extends ChangeNotifier {
           alldata.docs.map((doc) => doc.data()).toList();
 
       if (collectionname == 'surgeries') {
+        print("hello");
+        for (int i = 0; i < datas.length; i++) {
+          surgeycontrollers.add(CountDownController());
+        }
         allsurgeries = datas;
         filteredsurgeries = allsurgeries;
       } else if (collectionname == 'admits') {
+        for (int i = 0; i < datas.length; i++) {
+          admitcontrollers.add(CountDownController());
+        }
         alladmites = datas;
         filteredadmits = alladmites;
       }
@@ -117,9 +138,20 @@ class SurgeryandadmitProvider extends ChangeNotifier {
               .toLowerCase()
               .contains(status.toLowerCase());
       print('matchesSelectedName: $matchesSelectedName');
-      final matchesDateRange = date == null ||
-          (surgerydata['date'] as String).toLowerCase().contains(date);
+
+      // Convert Timestamp to DateTime and format it to match 'dd-MM-yyyy'
+      String formattedDate = '';
+      if (surgerydata['date'] is Timestamp) {
+        DateTime dateTime = (surgerydata['date'] as Timestamp).toDate();
+        formattedDate = DateFormat('dd-MM-yyyy').format(dateTime);
+      }
+
+      print('Formatted Date: $formattedDate');
+      print('Filter Date: $date');
+
+      final matchesDateRange = date == null || formattedDate == date;
       print('matchesdate: $matchesDateRange');
+
       return matchesQuery && matchesSelectedName && matchesDateRange;
     }).toList();
   }
@@ -146,8 +178,17 @@ class SurgeryandadmitProvider extends ChangeNotifier {
               .contains(status.toLowerCase());
       print('matchesSelectedName: $matchesSelectedName');
 
-      final matchesDateRange = date == null ||
-          (admitdata['admissionDate'] as String).toLowerCase().contains(date);
+      String formattedDate = '';
+      if (admitdata['admissionDate'] is Timestamp) {
+        DateTime dateTime = (admitdata['admissionDate'] as Timestamp).toDate();
+        formattedDate = DateFormat('dd-MM-yyyy').format(dateTime);
+      }
+
+      print('Formatted Date: $formattedDate');
+      print('Filter Date: $date');
+
+      final matchesDateRange = date == null || formattedDate == date;
+      print('matchesdate: $matchesDateRange');
       return matchesQuery && matchesSelectedName && matchesDateRange;
     }).toList();
   }
@@ -205,6 +246,27 @@ class SurgeryandadmitProvider extends ChangeNotifier {
     int seconds = difference.inSeconds;
 
     return '${hours.toString().padLeft(2, '0')}.${minutes.toString().padLeft(2, '0')}';
+  }
+
+  int convertTimeToSeconds(String time) {
+    try {
+      print("Input time: $time");
+      List<String> parts = time.split(':');
+
+      if (parts.length != 3) {
+        throw FormatException("Invalid time format. Expected HH:mm:ss");
+      }
+
+      int hours = int.parse(parts[0]);
+      int minutes = int.parse(parts[1]);
+      int seconds = int.parse(parts[2]);
+
+      // Convert the time to total seconds
+      return (hours * 3600) + (minutes * 60) + seconds;
+    } catch (e) {
+      print("Error: ${e.toString()}");
+      return 0; // Return a default value in case of an error
+    }
   }
 
   String formatTime(int milliseconds) {

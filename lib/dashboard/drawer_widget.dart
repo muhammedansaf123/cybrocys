@@ -1,5 +1,6 @@
 import 'package:hospital_managment/medical_records/medical_records_provider.dart';
 import 'package:hospital_managment/medical_records/medicalrecords.dart';
+import 'package:hospital_managment/surgeries_admit/provider/surgeryandadmit_provider.dart';
 import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
 import 'package:hospital_managment/components/components.dart';
 import 'package:flutter/material.dart';
@@ -57,6 +58,8 @@ class Drawerwidget extends StatelessWidget {
                 icons: Icons.local_hospital_outlined,
                 title: 'Surgeries and admits',
                 onTap: () {
+                   Provider.of<SurgeryandadmitProvider>(context, listen: false)
+                      .clear();
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => SurgeryAdmit()));
                 }),
