@@ -42,7 +42,7 @@ class _HomepageState extends State<Homepage> {
     }
     FirebaseFirestore.instance
         .collection('users')
-        .doc(id)
+        .doc(uid)
         .get()
         .then((DocumentSnapshot documentSnapshot) async {
       if (documentSnapshot.exists) {

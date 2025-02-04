@@ -394,7 +394,7 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
                                 provider.allsurgeries.isNotEmpty) ...[
                               SizedBox(
                                 height:
-                                    MediaQuery.of(context).size.height * 0.75,
+                                    MediaQuery.of(context).size.height * 0.73,
                                 child: ListView.builder(
                                   itemCount: provider.filteredsurgeries.length,
                                   itemBuilder: (context, index) {
@@ -433,68 +433,118 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
                                         userdata: provider.userdata,
                                         child: Row(
                                           children: [
-                                            CustomCircularCountDownTimer(
-                                              data: surgerydata,
-                                              index: index,
-                                              durationInSeconds:
-                                                  durationInSeconds,
-                                              initialDuration:
-                                                  surgerydata['starttime'] !=
-                                                          null
-                                                      ? surgerydata['ispaused']
-                                                          ? surgerydata[
-                                                              'pausedseconds']
-                                                          : initialDuration
-                                                      : 0,
-                                              controller: provider
-                                                  .surgeycontrollers[index],
-                                              onComplete: () {
-                                                final seconds = provider
-                                                    .convertTimeToSeconds(
+                                            !surgerydata['ispaused']
+                                                ? CustomCircularCountDownTimer(
+                                                    data: surgerydata,
+                                                    index: index,
+                                                    durationInSeconds:
+                                                        durationInSeconds,
+                                                    initialDuration: surgerydata[
+                                                                'starttime'] !=
+                                                            null
+                                                        ? surgerydata[
+                                                                'ispaused']
+                                                            ? surgerydata[
+                                                                'pausedseconds']
+                                                            : initialDuration
+                                                        : 0,
+                                                    controller: provider
+                                                            .surgeycontrollers[
+                                                        index],
+                                                    onComplete: () {
+                                                      final seconds = provider
+                                                          .convertTimeToSeconds(
+                                                              provider
+                                                                  .surgeycontrollers[
+                                                                      index]
+                                                                  .getTime()!);
+                                                      if (seconds ==
+                                                          surgerydata[
+                                                              'durationinseconds']) {
+                                                        FirebaseFirestore
+                                                            .instance
+                                                            .collection(
+                                                                "surgeries")
+                                                            .doc(surgerydata[
+                                                                'id'])
+                                                            .update({
+                                                          'isstarted': false,
+                                                          'status': "Completed",
+                                                          'finishedseconds':
+                                                              seconds
+                                                        });
+                                                        provider
+                                                            .fetchsurgeriesandadmits(
+                                                                "surgeries");
+                                                        debugPrint(
+                                                            'Countdown Ended');
+                                                      }
+                                                    },
+                                                    onChange:
+                                                        (String timeStamp) {
+                                                      if (surgerydata[
+                                                                  'ispaused'] ==
+                                                              true &&
+                                                          !provider
+                                                              .surgeycontrollers[
+                                                                  index]
+                                                              .isPaused
+                                                              .value) {
+                                                        provider
+                                                            .fetchsurgeriesandadmits(
+                                                                "surgeries");
                                                         provider
                                                             .surgeycontrollers[
                                                                 index]
-                                                            .getTime()!);
-                                                if (seconds ==
-                                                    surgerydata[
-                                                        'durationinseconds']) {
-                                                  FirebaseFirestore.instance
-                                                      .collection("surgeries")
-                                                      .doc(surgerydata['id'])
-                                                      .update({
-                                                    'isstarted': false,
-                                                    'status': "Completed",
-                                                    'finishedseconds': seconds
-                                                  });
-                                                }
-                                                provider
-                                                    .fetchsurgeriesandadmits(
-                                                        "surgeries");
-                                                debugPrint('Countdown Ended');
-                                              },
-                                              onChange: (String timeStamp) {
-                                                if (surgerydata['ispaused'] ==
-                                                        true &&
-                                                    !provider
-                                                        .surgeycontrollers[index]
-                                                        .isPaused
-                                                        .value) {
-                                                  provider
-                                                      .fetchsurgeriesandadmits(
-                                                          "surgeries");
-                                                  provider
-                                                      .surgeycontrollers[index]
-                                                      .pause();
-                                                }
-                                                if (surgerydata['ispaused'] ==
-                                                    false) {
-                                                  provider
-                                                      .surgeycontrollers[index]
-                                                      .resume();
-                                                }
-                                              },
-                                            ),
-                                            // Pause or Resume Timer
+                                                            .pause();
+                                                      }
+                                                      if (surgerydata[
+                                                              'ispaused'] ==
+                                                          false) {
+                                                        provider
+                                                            .surgeycontrollers[
+                                                                index]
+                                                            .resume();
+                                                      }
+                                                    },
+                                                  )
+                                                : Container(
+                                                    width: 100,
+                                                    height: 100,
+                                                    decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        color:
+                                                            Colors.deepPurple),
+                                                    child: Column(
+                                                      children: [
+                                                        Spacer(),
+                                                        Text(
+                                                          provider.formatTimeFromSeconds(
+                                                              surgerydata[
+                                                                  'pausedseconds']),
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
+                                                        SizedBox(
+                                                          height: 2,
+                                                        ),
+                                                        Text(
+                                                          "Paused",
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
+                                                        Spacer(),
+                                                      ],
+                                                    ),
+                                                  )
                                           ],
                                         ),
                                       ),
@@ -506,7 +556,7 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
                           ],
                         ),
                       ),
-                      // Admits tab
+
                       SingleChildScrollView(
                         child: Column(children: [
                           Padding(
@@ -575,27 +625,24 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
 
                                     final int durationInSeconds =
                                         admitdata['durationinseconds'];
-                                    int initialDuration =
-                                        0; // Default value when starttime is null
+                                    int initialDuration = 0;
                                     if (admitdata['starttime'] != null) {
-                                      // Calculate initial duration only if starttime is not null
                                       final Timestamp startTimeTimestamp =
                                           admitdata['starttime'];
                                       final DateTime startTime =
                                           startTimeTimestamp.toDate();
-
                                       final int durationInSeconds =
                                           admitdata['durationinseconds'];
                                       final int elapsedTimeSinceStart =
                                           DateTime.now()
                                               .difference(startTime)
                                               .inSeconds;
-
                                       initialDuration = elapsedTimeSinceStart >
                                               durationInSeconds
                                           ? durationInSeconds
                                           : elapsedTimeSinceStart;
                                     }
+
                                     // Timer widget
                                     return Padding(
                                       padding:
@@ -607,67 +654,117 @@ class _SurgeryAdmitState extends State<SurgeryAdmit>
                                         userdata: provider.userdata,
                                         child: Row(
                                           children: [
-                                            CustomCircularCountDownTimer(
-                                              data: admitdata,
-                                              index: index,
-                                              durationInSeconds:
-                                                  durationInSeconds,
-                                              initialDuration:
-                                                  admitdata['starttime'] != null
-                                                      ? admitdata['ispaused']
-                                                          ? admitdata[
-                                                              'pausedseconds']
-                                                          : initialDuration
-                                                      : 0,
-                                              controller: provider
-                                                  .admitcontrollers[index],
-                                              onComplete: () {
-                                                final seconds = provider
-                                                    .convertTimeToSeconds(
+                                            !admitdata['ispaused']
+                                                ? CustomCircularCountDownTimer(
+                                                    data: admitdata,
+                                                    index: index,
+                                                    durationInSeconds:
+                                                        durationInSeconds,
+                                                    initialDuration: admitdata[
+                                                                'starttime'] !=
+                                                            null
+                                                        ? admitdata['ispaused']
+                                                            ? admitdata[
+                                                                'pausedseconds']
+                                                            : initialDuration
+                                                        : 0,
+                                                    controller: provider
+                                                            .admitcontrollers[
+                                                        index],
+                                                    onComplete: () {
+                                                      final seconds = provider
+                                                          .convertTimeToSeconds(
+                                                              provider
+                                                                  .admitcontrollers[
+                                                                      index]
+                                                                  .getTime()!);
+                                                      if (seconds ==
+                                                          admitdata[
+                                                              'durationinseconds']) {
+                                                        FirebaseFirestore
+                                                            .instance
+                                                            .collection(
+                                                                "admits")
+                                                            .doc(
+                                                                admitdata['id'])
+                                                            .update({
+                                                          'isstarted': false,
+                                                          'status': "Completed",
+                                                          'finishedseconds':
+                                                              seconds
+                                                        });
+                                                        provider
+                                                            .fetchsurgeriesandadmits(
+                                                                "admits");
+                                                        debugPrint(
+                                                            'Countdown Ended');
+                                                      }
+                                                    },
+                                                    onChange:
+                                                        (String timeStamp) {
+                                                      if (admitdata[
+                                                                  'ispaused'] ==
+                                                              true &&
+                                                          !provider
+                                                              .admitcontrollers[
+                                                                  index]
+                                                              .isPaused
+                                                              .value) {
+                                                        provider
+                                                            .fetchsurgeriesandadmits(
+                                                                "admits");
                                                         provider
                                                             .admitcontrollers[
                                                                 index]
-                                                            .getTime()!);
-                                                if (seconds ==
-                                                    admitdata[
-                                                        'durationinseconds']) {
-                                                  FirebaseFirestore.instance
-                                                      .collection("admits")
-                                                      .doc(admitdata['id'])
-                                                      .update({
-                                                    'isstarted': false,
-                                                    'status': "Completed",
-                                                    'finishedseconds': seconds
-                                                  });
-                                                }
-                                                provider
-                                                    .fetchsurgeriesandadmits(
-                                                        "admits");
-                                                debugPrint('Countdown Ended');
-                                              },
-                                              onChange: (String timeStamp) {
-                                                if (admitdata['ispaused'] ==
-                                                        true &&
-                                                    !provider
-                                                        .admitcontrollers[index]
-                                                        .isPaused
-                                                        .value) {
-                                                  provider
-                                                      .fetchsurgeriesandadmits(
-                                                          "admits");
-                                                  provider
-                                                      .admitcontrollers[index]
-                                                      .pause();
-                                                }
-                                                if (admitdata['ispaused'] ==
-                                                    false) {
-                                                  provider
-                                                      .admitcontrollers[index]
-                                                      .resume();
-                                                }
-                                              },
-                                            ),
-                                            // Pause or Resume Timer
+                                                            .pause();
+                                                      }
+                                                      if (admitdata[
+                                                              'ispaused'] ==
+                                                          false) {
+                                                        provider
+                                                            .admitcontrollers[
+                                                                index]
+                                                            .resume();
+                                                      }
+                                                    },
+                                                  )
+                                                : Container(
+                                                    width: 100,
+                                                    height: 100,
+                                                    decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        color:
+                                                            Colors.deepPurple),
+                                                    child: Column(
+                                                      children: [
+                                                        Spacer(),
+                                                        Text(
+                                                          provider.formatTimeFromSeconds(
+                                                              admitdata[
+                                                                  'pausedseconds']),
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
+                                                        SizedBox(
+                                                          height: 2,
+                                                        ),
+                                                        Text(
+                                                          "Paused",
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
+                                                        Spacer(),
+                                                      ],
+                                                    ),
+                                                  )
                                           ],
                                         ),
                                       ),

@@ -26,14 +26,15 @@ class SurgerAdmitTile extends StatefulWidget {
 }
 
 bool isloading = false;
-void paymentFunction(String id, String payment, BuildContext context) {
+void paymentFunction(
+    String id, String payment, BuildContext context, String status) {
   try {
     FirebaseFirestore.instance
         .collection('invoice')
         .doc(id)
         .get()
         .then((DocumentSnapshot documentSnapshot) {
-      if (documentSnapshot.exists) {
+      if (documentSnapshot.exists && status == "Completed") {
         final data = documentSnapshot.data() as Map<String, dynamic>;
 
         final String role = 'patient';
@@ -77,15 +78,24 @@ void paymentFunction(String id, String payment, BuildContext context) {
             ),
           ),
         );
-      } else {
+      } else if (status == "Ongoing") {
         print("no document exist");
-          ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('invoice hasnt been generated yet')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('The session is not finished yet')));
+      } else if (status == "Pending") {
+        print("no document exist");
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('The session is not started yet')));
+      } 
+      
+       else {
+        print("no document exist");
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Invoice hasnt been generated yet')));
       }
     });
   } catch (e) {
     print(e);
-   
   }
 }
 
@@ -138,8 +148,11 @@ class _MedicalRecordTileState extends State<SurgerAdmitTile> {
 
                 if (widget.userdata['roles'] == 'patient') {
                   print("3");
-                  paymentFunction(widget.surgeryadmitdata['id'],
-                      widget.surgeryadmitdata['payment'], context);
+                  paymentFunction(
+                      widget.surgeryadmitdata['id'],
+                      widget.surgeryadmitdata['payment'],
+                      context,
+                      widget.surgeryadmitdata['status']);
                 }
               },
               child: Card(
@@ -228,7 +241,9 @@ class _MedicalRecordTileState extends State<SurgerAdmitTile> {
                                                   widget.surgeryadmitdata['id'],
                                                   widget.surgeryadmitdata[
                                                       'payment'],
-                                                  context);
+                                                  context,
+                                                  widget.surgeryadmitdata[
+                                                      'status']);
                                             },
                                             child: Text("Pay"))
                                       ],
@@ -267,7 +282,7 @@ class _MedicalRecordTileState extends State<SurgerAdmitTile> {
                                                           widget.surgeryadmitdata[
                                                                       'status'] ==
                                                                   'Pending'
-                                                              ? Colors.orange
+                                                              ? Colors.red
                                                               : Colors.green,
                                                       borderRadius:
                                                           BorderRadius.circular(
@@ -298,7 +313,7 @@ class _MedicalRecordTileState extends State<SurgerAdmitTile> {
                                           onPressed: () {
                                             final totalAmount =
                                                 widget.surgeryadmitdata[
-                                                    'finishedseconds'];
+                                                    'finishedseconds']??100;
                                             print(
                                                 totalAmount); // Debugging print to check the value
                                             DateTime date = DateTime.now();
@@ -333,13 +348,14 @@ class _MedicalRecordTileState extends State<SurgerAdmitTile> {
                                                             2025, 1, 21),
                                                         items: [
                                                           {
-                                                            'item':widget.issurgery
-                                                            ? "Surgery"
-                                                            : "Admit",
+                                                            'item':
+                                                                widget.issurgery
+                                                                    ? "Surgery"
+                                                                    : "Admit",
                                                             'description':
-                                                               widget.issurgery
-                                                            ? "Surgery"
-                                                            : "Admit",
+                                                                widget.issurgery
+                                                                    ? "Surgery"
+                                                                    : "Admit",
                                                             'amount':
                                                                 totalAmount
                                                           },

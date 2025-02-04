@@ -269,6 +269,10 @@ class SurgeryandadmitProvider extends ChangeNotifier {
     }
   }
 
+  String formatTimeFromSeconds(int seconds) {
+    return formatTime(seconds * 1000);
+  }
+
   String formatTime(int milliseconds) {
     final int seconds = (milliseconds / 1000).truncate();
     final int minutes = (seconds / 60).truncate();

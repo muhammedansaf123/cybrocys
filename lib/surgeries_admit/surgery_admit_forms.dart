@@ -6,6 +6,8 @@ import 'package:hospital_managment/appointments/appointmentsbooking.dart';
 import 'package:hospital_managment/appointments/components/custom_textfield.dart';
 import 'package:hospital_managment/components/components.dart';
 import 'package:hospital_managment/dashboard/dashboard.dart';
+import 'package:hospital_managment/surgeries_admit/components/surgery_admit_tile.dart';
+import 'package:hospital_managment/surgeries_admit/surgery_admit.dart';
 import 'package:intl/intl.dart';
 
 class SurgeryAdmitForms extends StatefulWidget {
@@ -40,73 +42,20 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
   TextEditingController surgeonController = TextEditingController();
   TextEditingController preSurgeryInstructionsController =
       TextEditingController();
-
+  final TextEditingController startdatecontroler = TextEditingController();
+  final TextEditingController enddatecontroller = TextEditingController();
   final TextEditingController _differenceController = TextEditingController();
   TextEditingController wardController = TextEditingController();
   int? durationinseconds;
   TextEditingController specialInstructionsController = TextEditingController();
   String uid = FirebaseAuth.instance.currentUser!.uid;
-  DateTime? _selectedDate;
 
+  final _formKey = GlobalKey<FormState>();
   DateTime? _startDate;
   DateTime? _endDate;
-  Future<void> _pickDateAndTime(BuildContext context, bool isStartDate) async {
-    DateTime initialDate = isStartDate
-        ? (_startDate ?? DateTime.now())
-        : (_endDate ?? (_startDate != null ? _startDate! : DateTime.now()));
-    DateTime firstDate =
-        isStartDate ? DateTime.now() : (_startDate ?? DateTime.now());
-
-    DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: DateTime(2100),
-    );
-
-    if (pickedDate != null) {
-      TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(initialDate),
-      );
-
-      if (pickedTime != null) {
-        DateTime finalDateTime = DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-
-        setState(() {
-          if (isStartDate) {
-            _startDate = finalDateTime;
-            if (_endDate != null && _endDate!.isBefore(_startDate!)) {
-              _endDate = null;
-            }
-          } else {
-            _endDate = finalDateTime;
-          }
-          _calculateDifference();
-        });
-      }
-    }
-  }
-
-  void _calculateDifference() {
-    if (_startDate != null && _endDate != null) {
-      final difference = _endDate!.difference(_startDate!);
-      final hours = difference.inHours;
-      setState(() {
-        durationinseconds = difference.inSeconds;
-      });
-      _differenceController.text = '$hours hours';
-    } else {
-      _differenceController.clear();
-    }
-  }
-
+  String? _startDateError;
+  String? _endDateError;
+  bool _submitted = false;
   void surgery() async {
     try {
       FirebaseFirestore.instance
@@ -200,16 +149,173 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
       MaterialPageRoute(builder: (context) => Homepage()),
       (Route<dynamic> route) => false,
     );
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => SurgeryAdmit()),
+    );
   }
 
   @override
   void initState() {
-    if (mounted) {
-      setState(() {});
-    }
-    // TODO: implement initState
-
     super.initState();
+    // Add listeners to all text controllers
+    typecontroller.addListener(_onTextChanged);
+    roomController.addListener(_onTextChanged);
+    anesthesiaController.addListener(_onTextChanged);
+    wardController.addListener(_onTextChanged);
+    _differenceController.addListener(_onTextChanged);
+    specialInstructionsController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    if (_submitted) {
+      setState(() {
+        _formKey.currentState!.validate();
+      });
+    }
+  }
+
+  void _submitForm() {
+    setState(() {
+      _submitted = true;
+      _startDateError =
+          _startDate == null ? 'Please select a start date' : null;
+      _endDateError = _endDate == null ? 'Please select an end date' : null;
+    });
+
+    if (_formKey.currentState!.validate() &&
+        _startDate != null &&
+        _endDate != null) {
+      print("Form Submitted Successfully!");
+      if (widget.issurgery) {
+        surgery();
+      } else {
+        admit();
+      }
+    }
+  }
+
+  Future<void> _pickDateAndTime(BuildContext context, bool isStartDate) async {
+    DateTime initialDate = isStartDate
+        ? (_startDate ?? DateTime.now())
+        : (_endDate ?? (_startDate ?? DateTime.now()));
+    DateTime firstDate =
+        isStartDate ? DateTime.now() : (_startDate ?? DateTime.now());
+
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate != null) {
+      TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(initialDate),
+      );
+
+      if (pickedTime != null) {
+        DateTime finalDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+
+        setState(() {
+          if (isStartDate) {
+            _startDate = finalDateTime;
+            _startDateError = null;
+            if (_endDate != null && _endDate!.isBefore(_startDate!)) {
+              _endDate = null;
+              _endDateError = 'End date must be after start date';
+            }
+          } else {
+            if (_startDate == null) {
+              _startDateError = 'Please select a start date first';
+            } else {
+              _endDate = finalDateTime;
+              _endDateError = null;
+            }
+          }
+          _calculateDifference();
+        });
+      }
+    }
+    if (_startDate != null) {
+      startdatecontroler.text =
+          DateFormat('dd/MM/yyyy HH:mm').format(_startDate!);
+    }
+    if (_endDate != null) {
+      enddatecontroller.text = DateFormat('dd/MM/yyyy HH:mm').format(_endDate!);
+    }
+  }
+
+  void _calculateDifference() {
+    if (_startDate != null && _endDate != null) {
+      final difference = _endDate!.difference(_startDate!);
+      final hours = difference.inHours;
+      setState(() {
+        durationinseconds = difference.inSeconds;
+      });
+      _differenceController.text = '$hours hours';
+    } else {
+      _differenceController.clear();
+    }
+  }
+
+  Widget _buildDatePickerField({
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+    String? error,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              color: Colors.white,
+              border: Border.all(color: Colors.blueGrey.shade300),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 6,
+                  offset: const Offset(2, 4),
+                ),
+              ],
+            ),
+            width: MediaQuery.of(context).size.width,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 15.0),
+            child: Text(
+              date != null
+                  ? DateFormat('dd/MM/yyyy HH:mm').format(date)
+                  : label,
+              style: TextStyle(fontSize: 16.0, color: Colors.blueGrey[700]),
+            ),
+          ),
+        ),
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 10),
+            child: Text(
+              error,
+              style: const TextStyle(color: Color(0xffb73e37), fontSize: 12),
+            ),
+          ),
+        if (error == null)
+          SizedBox(
+            height: 10,
+          ),
+      ],
+    );
   }
 
   @override
@@ -228,101 +334,99 @@ class _SurgeryAdmitFormsState extends State<SurgeryAdmitForms> {
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 15),
-              Text(
-                "Enter Details",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 25),
-              if (widget.issurgery) ...[
-                AppointmentTextfield(
-                  controller: typecontroller,
-                  hinttext: "Type of Surgery",
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 15),
+                const Text(
+                  "Enter Details",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-                AppointmentTextfield(
-                  controller: roomController,
-                  hinttext: "Room Number (for surgery)",
+                const SizedBox(height: 25),
+                if (widget.issurgery) ...[
+                  SurgeryAdmitTile(
+                    controller: typecontroller,
+                    hinttext: "Type of Surgery",
+                    validator: (value) =>
+                        value!.isEmpty ? "Please fill this field" : null,
+                  ),
+                  SurgeryAdmitTile(
+                    controller: roomController,
+                    hinttext: "Room Number (for surgery)",
+                    keyboardType: TextInputType.number,
+                    validator: (value) =>
+                        value!.isEmpty ? "Room no. is Required" : null,
+                  ),
+                  SurgeryAdmitTile(
+                    controller: anesthesiaController,
+                    hinttext: "Anesthesia Type",
+                    validator: (value) =>
+                        value!.isEmpty ? "Please fill this field" : null,
+                  ),
+                ] else ...[
+                  SurgeryAdmitTile(
+                    controller: wardController,
+                    hinttext: "Ward Number (for admit)",
+                    keyboardType: TextInputType.number,
+                    validator: (value) =>
+                        value!.isEmpty ? "Ward no. is required" : null,
+                  ),
+                ],
+                _startDate == null
+                    ? _buildDatePickerField(
+                        label: 'Select a Starting Date & Time',
+                        date: _startDate,
+                        onTap: () => _pickDateAndTime(context, true),
+                        error: _startDateError,
+                      )
+                    : SurgeryAdmitTile(
+                        onTap: () {
+                          _pickDateAndTime(context, true);
+                        },
+                        readOnly: true,
+                        controller: startdatecontroler,
+                        hinttext: "Start date",
+                      ),
+                const SizedBox(height: 10.0),
+                _endDate == null
+                    ? _buildDatePickerField(
+                        label: 'Select an Ending Date & Time',
+                        date: _endDate,
+                        onTap: () => _pickDateAndTime(context, false),
+                        error: _endDateError,
+                      )
+                    : SurgeryAdmitTile(
+                        onTap: () {
+                          _pickDateAndTime(context, true);
+                        },
+                        readOnly: true,
+                        controller: enddatecontroller,
+                        hinttext: "End date",
+                      ),
+                const SizedBox(height: 10.0),
+                SurgeryAdmitTile(
+                  controller: _differenceController,
+                  hinttext: "Hours",
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value!.isEmpty ? "Please fill this field" : null,
                 ),
-                AppointmentTextfield(
-                  controller: anesthesiaController,
-                  hinttext: "Anesthesia Type",
+                SurgeryAdmitTile(
+                  controller: specialInstructionsController,
+                  hinttext: "Special Instructions",
+                  validator: (value) =>
+                      value!.isEmpty ? "Instructions are required" : null,
                 ),
-              ] else ...[
-                AppointmentTextfield(
-                  controller: wardController,
-                  hinttext: "Ward Number (for admit)",
+                SizedBox(height: 10),
+                Mybutton(
+                  load: false,
+                  onPressed: _submitForm,
+                  text: "Submit",
                 ),
               ],
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _pickDateAndTime(context, true),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 15.0),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Text(
-                          _startDate != null
-                              ? DateFormat('dd/MM/yyyy HH:mm')
-                                  .format(_startDate!)
-                              : 'Select a Starting Date & Time',
-                          style:
-                              TextStyle(fontSize: 16.0, color: Colors.black87),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _pickDateAndTime(context, false),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 15.0),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Text(
-                          _endDate != null
-                              ? DateFormat('dd/MM/yyyy HH:mm').format(_endDate!)
-                              : 'Select a Ending Date & Time',
-                          style:
-                              TextStyle(fontSize: 16.0, color: Colors.black87),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16.0),
-              AppointmentTextfield(
-                controller: _differenceController,
-                hinttext: "hours",
-              ),
-              AppointmentTextfield(
-                controller: specialInstructionsController,
-                hinttext: "Special Instructions",
-              ),
-              SizedBox(height: 20),
-              SizedBox(height: 20),
-              Mybutton(
-                load: false,
-                onPressed: widget.issurgery ? surgery : admit,
-                text: "Submit",
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -58,7 +58,7 @@ class Drawerwidget extends StatelessWidget {
                 icons: Icons.local_hospital_outlined,
                 title: 'Surgeries and admits',
                 onTap: () {
-                   Provider.of<SurgeryandadmitProvider>(context, listen: false)
+                  Provider.of<SurgeryandadmitProvider>(context, listen: false)
                       .clear();
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => SurgeryAdmit()));
@@ -68,7 +68,7 @@ class Drawerwidget extends StatelessWidget {
                 title: 'Departments & doctor',
                 onTap: () {
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => Countowntimer()));
+                      MaterialPageRoute(builder: (context) => MyForm()));
                 })
           ],
         ),

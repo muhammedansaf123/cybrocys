@@ -365,7 +365,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           title: '1.Introduction',
                           subtitle: [
                             BulletText(
-                                'Welcome to Dr Co , These Terms and Conditions ("Terms") govern your use of our doctor consultation application (the "App"). By using the App, you agree to these Terms. If you do not agree, please do not use the App.')
+                                'Welcome to Dr Co , These Terms and Conditions ("Terms") govern your use of our doctor consultation application (the "App"). By using the App, you agree to these Terms. If you do not agree, Please do not use the App.')
                           ],
                         ),
                         Customtile(title: '2.Servives', subtitle: [

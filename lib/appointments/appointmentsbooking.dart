@@ -58,8 +58,7 @@ class AppointmentsPage extends StatelessWidget {
                 final rating = doctorsdata['rating'];
 
                 return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     child: AppointmenttileBooking(
                         uid: uid,
                         availablity: available,
@@ -174,7 +173,7 @@ class _AppointmenttileState extends State<AppointmenttileBooking> {
         namecontroller.text.isEmpty ||
         agecontroller.text.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('please fill all the fields')));
+          .showSnackBar(SnackBar(content: Text('Please fill all the fields')));
     } else if (!_selectedDate!.isAfter(today)) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Date must be selected of future')));
@@ -451,17 +450,14 @@ class _DialogContainerState extends State<DialogContainer> {
                     keyboardType: TextInputType.name,
                     controller: namecontroller,
                     hinttext: "Full Name"),
-                SizedBox(height: 15),
                 AppointmentTextfield(
                     keyboardType: TextInputType.number,
                     controller: agecontroller,
                     hinttext: "Age"),
-                SizedBox(height: 15),
                 AppointmentTextfield(
                     keyboardType: TextInputType.name,
                     controller: reasoncontroller,
                     hinttext: "Purpose of your visit"),
-                SizedBox(height: 15),
                 Row(
                   children: [
                     Expanded(
@@ -617,4 +613,3 @@ class _DialogContainerState extends State<DialogContainer> {
     );
   }
 }
-

@@ -53,6 +53,7 @@ class _MyStopwatchState extends State<MyStopwatch> {
       'starttime': Timestamp.now(),
       'status': "Ongoing",
     });
+
     _controller.restart();
   }
 
@@ -78,44 +79,53 @@ class _MyStopwatchState extends State<MyStopwatch> {
   }
 
   void completeTimer(Map<String, dynamic> admitData) {
-    updateFirestore(
-        widget.type == "Surgery" ? "surgeries" : "admits", admitData['id'], {
-      'isstarted': false,
-      'status': "Completed",
-      'finishedseconds': timeToSeconds(_controller.getTime()!)
-    });
-    _controller.pause();
-    int totalAmount = timeToSeconds(_controller.getTime()!);
-    double taxes = totalAmount * 0.07;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => InvoiceWidget(
-          payment: 'notpaid',
-          role: 'doctor',
-          id: admitData['id'],
-          type: widget.type,
-          invoiceNumber: 'INV${DateTime.now().toIso8601String()}',
-          patientName: admitData['patientsname'],
-          patientAddress: '123 Main Street, Springfield',
-          patientPhone: '123-456-7890',
-          invoiceDate: DateTime.now(),
-          dueDate: DateTime.now().add(Duration(days: 7)),
-          items: [
-            {
-              'item': widget.type,
-              'description': widget.type,
-              'amount': totalAmount
-            }
-          ],
-          subTotal: totalAmount.toDouble(),
-          taxRate: 7,
-          taxAmount: taxes,
-          totalAmount: totalAmount + taxes,
-          notes: 'Thank you for your prompt payment!',
-        ),
-      ),
-    );
+    try {
+      if (admitData['isstarted'] == true) {
+        updateFirestore(widget.type == "Surgery" ? "surgeries" : "admits",
+            admitData['id'], {
+          'isstarted': false,
+          'status': "Completed",
+          'finishedseconds': timeToSeconds(_controller.getTime()!)
+        });
+        _controller.pause();
+        int totalAmount = timeToSeconds(_controller.getTime()!);
+        double taxes = totalAmount * 0.07;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InvoiceWidget(
+              payment: 'notpaid',
+              role: 'doctor',
+              id: admitData['id'],
+              type: widget.type,
+              invoiceNumber: 'INV${DateTime.now().toIso8601String()}',
+              patientName: admitData['patientsname'],
+              patientAddress: '123 Main Street, Springfield',
+              patientPhone: '123-456-7890',
+              invoiceDate: DateTime.now(),
+              dueDate: DateTime.now().add(Duration(days: 7)),
+              items: [
+                {
+                  'item': widget.type,
+                  'description': widget.type,
+                  'amount': totalAmount
+                }
+              ],
+              subTotal: totalAmount.toDouble(),
+              taxRate: 7,
+              taxAmount: taxes,
+              totalAmount: totalAmount + taxes,
+              notes: 'Thank you for your prompt payment!',
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Please start the timer')));
+      }
+    } catch (e) {
+      print(e);
+    }
   }
 
   @override
@@ -126,70 +136,152 @@ class _MyStopwatchState extends State<MyStopwatch> {
             ? provider.filteredsurgeries[widget.index]
             : provider.filteredadmits[widget.index];
         final int durationInSeconds = admitData['durationinseconds'];
-        int initialDuration = admitData['starttime'] != null
-            ? DateTime.now()
-                .difference(admitData['starttime'].toDate())
-                .inSeconds
-            : 0;
+
+        int initialDuration = 0;
+        if (admitData['starttime'] != null) {
+          final Timestamp startTimeTimestamp = admitData['starttime'];
+          final DateTime startTime = startTimeTimestamp.toDate();
+          final int durationInSeconds = admitData['durationinseconds'];
+          final int elapsedTimeSinceStart =
+              DateTime.now().difference(startTime).inSeconds;
+          initialDuration = elapsedTimeSinceStart > durationInSeconds
+              ? durationInSeconds
+              : elapsedTimeSinceStart;
+        }
 
         return Scaffold(
           backgroundColor: Colors.deepPurple,
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                CircularCountDownTimer(
-                  duration: durationInSeconds,
-                  initialDuration: admitData['starttime'] != null
-                      ? admitData['ispaused']
-                          ? admitData['pausedseconds']
-                          : initialDuration
-                      : 0,
-                  controller: _controller,
-                  width: 300,
-                  height: 300,
-                  ringColor: Colors.grey[300]!,
-                  fillColor: Colors.purpleAccent[100]!,
-                  backgroundColor: Colors.deepPurple[500],
-                  strokeWidth: 10.0,
-                  textStyle: TextStyle(
-                      fontSize: 30,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold),
-                  textFormat: CountdownTextFormat.HH_MM_SS,
-                  autoStart: admitData['isstarted'],
-                  onComplete: () => updateFirestore(
-                      widget.type == "Surgery" ? "surgeries" : "admits",
-                      admitData['id'],
-                      {'isstarted': false, 'status': "Completed"}),
-                ),
-                SizedBox(height: 30),
-                if (admitData['status'] == "Pending" ||
-                    admitData['status'] == "Ongoing")
-                  Row(
-                    spacing: 10,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (!admitData['isstarted'])
-                        ElevatedButton(
-                            onPressed: () => startTimer(admitData),
-                            child: Text("Start")),
-                      if (admitData['ispaused'])
-                        ElevatedButton(
-                            onPressed: () => resumeTimer(admitData),
-                            child: Text("Resume")),
-                      if (admitData['isstarted'] && !admitData['ispaused'])
-                        ElevatedButton(
-                            onPressed: () => pauseTimer(admitData),
-                            child: Text("Pause")),
-                      ElevatedButton(
-                          onPressed: () => completeTimer(admitData),
-                          child: Text("Done")),
-                    ],
-                  ),
-              ],
-            ),
-          ),
+          body: StreamBuilder(
+              stream: FirebaseFirestore.instance
+                  .collection(widget.type == "Surgery" ? "surgeries" : "admits")
+                  .doc(admitData['id'])
+                  .snapshots(),
+              builder: (context, snapshots) {
+                if (snapshots.hasData) {
+                  final data = snapshots.data;
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        CircularCountDownTimer(
+                            duration: durationInSeconds,
+                            initialDuration: data!['starttime'] != null
+                                ? data['ispaused']
+                                    ? data['pausedseconds']
+                                    : initialDuration
+                                : 0,
+                            controller: _controller,
+                            width: 300,
+                            height: 300,
+                            ringColor: Colors.grey[300]!,
+                            fillColor: Colors.purpleAccent[100]!,
+                            backgroundColor: Colors.deepPurple[500],
+                            strokeWidth: 10.0,
+                            textStyle: TextStyle(
+                                fontSize: 30,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                            textFormat: CountdownTextFormat.HH_MM_SS,
+                            autoStart: admitData['isstarted'],
+                            onStart: () {
+                              if (data['starttime'] == null) {
+                                _controller.pause();
+                              }
+                            },
+                            onChange: (value) {
+                              print('initialduration $initialDuration');
+                              print('dusationinseconds $durationInSeconds');
+                              if (data['status'] == "Completed") {
+                                _controller.pause();
+                              }
+                              if (data['ispaused'] == true &&
+                                  !_controller.isPaused.value) {
+                                provider.fetchsurgeriesandadmits("admits");
+                                _controller.pause();
+                              }
+                              if (data['ispaused'] == false &&
+                                  data['isstarted'] == true) {
+                                _controller.resume();
+                              }
+                            },
+                            onComplete: () {
+                              final seconds = provider
+                                  .convertTimeToSeconds(_controller.getTime()!);
+
+                              if (seconds == data['durationinseconds']) {
+                                if (widget.type == "Surgery") {
+                                  FirebaseFirestore.instance
+                                      .collection("surgeries")
+                                      .doc(data['id'])
+                                      .update({
+                                    'isstarted': false,
+                                    'status': "Completed",
+                                    'finishedseconds': seconds
+                                  });
+                                  provider.fetchsurgeriesandadmits("surgeries");
+                                  debugPrint('Countdown Ended');
+                                } else {
+                                  FirebaseFirestore.instance
+                                      .collection("admits")
+                                      .doc(data['id'])
+                                      .update({
+                                    'isstarted': false,
+                                    'status': "Completed",
+                                    'finishedseconds': seconds
+                                  });
+                                  provider.fetchsurgeriesandadmits("admits");
+                                  debugPrint('Countdown Ended');
+                                }
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            'Task Completed Successfully')));
+                              }
+                            }),
+                        SizedBox(height: 30),
+                        if (data!['status'] == "Pending" ||
+                            data['status'] == "Ongoing")
+                          Row(
+                            spacing: 10,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (!data['isstarted'])
+                                ElevatedButton(
+                                    onPressed: () {
+                                      startTimer(admitData);
+                                    },
+                                    child: Text("Start")),
+                              if (data['ispaused'])
+                                ElevatedButton(
+                                    onPressed: () {
+                                      resumeTimer(admitData);
+                                    },
+                                    child: Text("Resume")),
+                              if (data['isstarted'] && !data['ispaused'])
+                                ElevatedButton(
+                                    onPressed: () {
+                                      pauseTimer(admitData);
+                                    },
+                                    child: Text("Pause")),
+                              ElevatedButton(
+                                  onPressed: () {
+                                    completeTimer(admitData);
+                                    provider
+                                        .fetchsurgeriesandadmits("surgeries");
+                                    provider.fetchsurgeriesandadmits("admits");
+                                  },
+                                  child: Text("Done")),
+                            ],
+                          ),
+                      ],
+                    ),
+                  );
+                } else {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+              }),
         );
       },
     );
